@@ -1,10 +1,10 @@
 # Chess in the terminal
 Now you can finally play chess in the terminal!
 
-https://www.freecodecamp.org/news/simple-chess-ai-step-by-step-1d55a9266977
+This projects seeks to investiagte the wonders of [chess programming](https://www.chessprogramming.org/Main_Page). 
 
-### Play against a machine
-In 5 different modes.
+### Game modes
+You can either play locally against a friend or against the computer in 5 different difficulties. Inspired from [this article](https://www.freecodecamp.org/news/simple-chess-ai-step-by-step-1d55a9266977).
 #### 1. Baby mode 
 Machine takes random choice each time from all possible moves
 
