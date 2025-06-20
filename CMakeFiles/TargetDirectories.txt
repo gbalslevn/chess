@@ -1,0 +1,3 @@
+/Users/gustavnielsen/Documents/Kode.nosync/chess/CMakeFiles/chess.dir
+/Users/gustavnielsen/Documents/Kode.nosync/chess/CMakeFiles/edit_cache.dir
+/Users/gustavnielsen/Documents/Kode.nosync/chess/CMakeFiles/rebuild_cache.dir
