@@ -23,8 +23,6 @@ string board[8][8] = {
 bool gameinprocess = true;
 int turn = 0;
 
-// array enPassant = { int round: 0, string field: "" } // Add multiple enpassant objects
-
 struct Piece
 {
     string name;
@@ -33,7 +31,19 @@ struct Piece
     string note;
 
     Piece(string n = "", int c = 100, int r = 100, string note = "") : name(n), col(c), row(r), note(note) {}
+
+    bool operator==(const Piece& other) const
+    {
+        return name == other.name && 
+               col == other.col && 
+               row == other.row && 
+               note == other.note;
+    }
 };
+
+Piece enPassantPiece; // Store the latest piece which has been done an en passant 
+bool whiteCanCastle = true;
+bool blackCanCastle = true;
 
 struct Move
 {
@@ -261,17 +271,17 @@ vector<Move> getValidMoves(Piece piece)
                 moves.push_back(Move(pieceCol, pieceRow + moveDirection + moveDirection));
             }
         }
-        if (piece.note == "enPassant")
+
+        // Check if there is a valid en passant move
+        if (enPassantPiece.note.find("enPassant" + to_string(turn - 1)) == 0)
         {
-            // pawn can attack diagonal
-            char opponent = turn % 2 == 0 ? 'W' : 'B';
-            if (board[pieceCol + moveDirection * -1][pieceRow + moveDirection] != "00" && board[pieceCol + moveDirection * -1][pieceRow + moveDirection][0] == opponent)
-            {
-                moves.push_back(Move(pieceCol + moveDirection * -1, pieceRow + moveDirection));
+            bool passantNextToAPawn = enPassantPiece.note[enPassantPiece.note.size() - 2] == '1';
+            bool passanPastAPawn = enPassantPiece.note[enPassantPiece.note.size() - 1] == '1';
+            if(passantNextToAPawn) {
+                moves.push_back(Move(enPassantPiece.col, enPassantPiece.row + moveDirection));
             }
-            if (board[pieceCol + moveDirection][pieceRow + moveDirection] != "00" && board[pieceCol + moveDirection][pieceRow + moveDirection][0] == opponent)
-            {
-                moves.push_back(Move(pieceCol + moveDirection, pieceRow + moveDirection));
+            if(passanPastAPawn) {
+                moves.push_back(Move(enPassantPiece.col, enPassantPiece.row + 2 * moveDirection));
             }
         }
     }
@@ -279,15 +289,19 @@ vector<Move> getValidMoves(Piece piece)
     return moves;
 }
 
+// Check the pawn for en passant and adds it as an en passant target if so
 void checkEnPassant(Piece piece) {
-    // int direction []
-    // Check if you have moved up past a pawn. Checks if there is pawns next to or diagonally behind. 
+    // Check if you have moved up to or past an opponent pawn
     int oneBack = turn % 2 == 0 ? -1 : 1;
-    bool movedNextToAPawn = board[piece.col - 1][piece.row][1] == 'p' || board[piece.col +1][piece.row][1] == 'p';
-    bool movedPastAPawn = board[piece.col - 1][piece.row + oneBack][1] == 'p' || board[piece.col +1][piece.row + oneBack][1] == 'p';
-
+    string opponent = turn % 2 == 0 ? "B" : "W";
+    bool movedNextToAPawn = piece.col > 0 && board[piece.row][piece.col - 1] == opponent + "p" || piece.col < 7 && board[piece.row][piece.col + 1] == opponent + "p" ;
+    bool movedPastAPawn = piece.col > 0 && board[piece.row + oneBack][piece.col - 1] == opponent + "p" || piece.col < 7 && board[piece.row + oneBack][piece.col + 1] == opponent + "p";
     if(movedNextToAPawn || movedPastAPawn) {
-        // enPassant = true;
+        // Embed which type of en passant and in which round into the piece which did the en passant
+        piece.note = "enPassant" + to_string(turn) + to_string(movedNextToAPawn) + to_string(movedPastAPawn);
+        // Then save it
+        enPassantPiece = piece;
+        cout << "en passant...\n";
     }
 }
 
@@ -301,7 +315,7 @@ bool validateMove(string field, Piece piece)
     vector<Move> validMoves = getValidMoves(piece);
     if (find(validMoves.begin(), validMoves.end(), Move(field[0] - 'a', field[1] - '0' - 1)) == validMoves.end()) // check if move is not in validmoves
     {
-        cout << "sorry, " << Move(field[0] - 'a', field[1] - '0') << " is not a valid move, only valid moves are: ";
+        cout << "sorry, " << Move(field[0] - 'a', field[1] - '0' - 1) << " is not a valid move, only valid moves are: ";
         for (size_t i = 0; i < validMoves.size(); i++)
         {
             cout << validMoves[i] << ", ";
@@ -316,8 +330,8 @@ void executeMove(string move, Piece piece)
 {
     int row = move[1] - '0' - 1;
     int col = move[0] - 'a';
-
     Piece attackedPiece = getPiece(move);
+
     if (attackedPiece.name[1] == 'K')
     {
         gameinprocess = false;
@@ -325,13 +339,15 @@ void executeMove(string move, Piece piece)
         cout << winner << " won! Congratulations.";
         return;
     }
+
+    bool twoStepMove = abs(row - piece.row) - 2 == 0; // maybe combine this into the checkEnPassant method
+    if(piece.name[1] == 'p' && twoStepMove) {
+        checkEnPassant(attackedPiece);
+    }
+
     board[row][col] = piece.name;
     board[piece.row][piece.col] = "00";
 
-    bool twoStepMove = true; // check if piece has moved two steps
-    if(piece.name[1] == 'p' && twoStepMove) {
-        checkEnPassant(getPiece(move)); // Check the newly moved pawn for enPassant
-    }
 }
 
 Piece selectPiece()
@@ -378,7 +394,7 @@ bool movePiece(Piece piece)
 void handleTurn()
 {
     string move;
-    testMethod();
+    //testMethod();
     if (turn % 2 == 0)
     {
         cout << "White's turn\n";
