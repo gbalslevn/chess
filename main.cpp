@@ -41,10 +41,6 @@ struct Piece
     }
 };
 
-Piece enPassantPiece; // Store the latest piece which has been done an en passant 
-bool whiteCanCastle = true;
-bool blackCanCastle = true;
-
 struct Move
 {
     int col;
@@ -63,6 +59,10 @@ struct Move
     }
 };
 
+Piece enPassantPiece; // Store the latest piece which has been done an en passant 
+Move enPassantMove;
+bool whiteCanCastle = true;
+bool blackCanCastle = true;
 // Forward declarations to handle mutual recursion
 void movePiece(string piece, string startPos);
 vector<Move> getValidMoves(Piece piece);
@@ -273,33 +273,25 @@ vector<Move> getValidMoves(Piece piece)
         }
 
         // Check if there is a valid en passant move
-        if (enPassantPiece.note.find("enPassant" + to_string(turn - 1)) == 0)
+        if (enPassantPiece.note == "enPassant" + to_string(turn - 1))
         {
-            bool passantNextToAPawn = enPassantPiece.note[enPassantPiece.note.size() - 2] == '1';
-            bool passanPastAPawn = enPassantPiece.note[enPassantPiece.note.size() - 1] == '1';
-            if(passantNextToAPawn) {
-                moves.push_back(Move(enPassantPiece.col, enPassantPiece.row + moveDirection));
-            }
-            if(passanPastAPawn) {
-                moves.push_back(Move(enPassantPiece.col, enPassantPiece.row + 2 * moveDirection));
-            }
+            Move move = Move(enPassantPiece.col, enPassantPiece.row + moveDirection);
+            enPassantMove = move;
+            moves.push_back(move); 
+
         }
     }
 
     return moves;
 }
 
-// Check the pawn for en passant and adds it as an en passant target if so
+// Check if pawn did en passant and adds it as an en passant target if so
 void checkEnPassant(Piece piece) {
-    // Check if you have moved up to or past an opponent pawn
     int oneBack = turn % 2 == 0 ? -1 : 1;
     string opponent = turn % 2 == 0 ? "B" : "W";
     bool movedNextToAPawn = piece.col > 0 && board[piece.row][piece.col - 1] == opponent + "p" || piece.col < 7 && board[piece.row][piece.col + 1] == opponent + "p" ;
-    bool movedPastAPawn = piece.col > 0 && board[piece.row + oneBack][piece.col - 1] == opponent + "p" || piece.col < 7 && board[piece.row + oneBack][piece.col + 1] == opponent + "p";
-    if(movedNextToAPawn || movedPastAPawn) {
-        // Embed which type of en passant and in which round into the piece which did the en passant
-        piece.note = "enPassant" + to_string(turn) + to_string(movedNextToAPawn) + to_string(movedPastAPawn);
-        // Then save it
+    if(movedNextToAPawn) {
+        piece.note = "enPassant" + to_string(turn);
         enPassantPiece = piece;
         cout << "en passant...\n";
     }
@@ -340,9 +332,15 @@ void executeMove(string move, Piece piece)
         return;
     }
 
-    bool twoStepMove = abs(row - piece.row) - 2 == 0; // maybe combine this into the checkEnPassant method
-    if(piece.name[1] == 'p' && twoStepMove) {
-        checkEnPassant(attackedPiece);
+    if(piece.name[1] == 'p') {
+        bool twoStepMove = abs(row - piece.row) - 2 == 0; // maybe combine this into the checkEnPassant method
+        if(twoStepMove) {
+            checkEnPassant(attackedPiece);
+        }
+        if(Move(col, row) == enPassantMove) {
+            // Take the piece behind the en passant move
+            board[enPassantPiece.row][enPassantPiece.col] = "00";
+        }
     }
 
     board[row][col] = piece.name;
