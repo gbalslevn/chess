@@ -9,16 +9,18 @@ using namespace std;
 // Wq=white queen, Bq=black queen, .... and so on
 // 00=empty field
 
+// In the future have actual piece objects on the board.
+
 // Array 0 indexed. a2=row: 1, col: 0
 string board[8][8] = {
-    {"Wr", "Wk", "Wb", "Wq", "WK", "Wb", "Wk", "Wr"}, // 0th row (White pieces)
+    {"Wr", "00", "00", "00", "WK", "00", "00", "Wr"}, // 0th row (White pieces)
     {"Wp", "Wp", "Wp", "Wp", "Wp", "Wp", "Wp", "Wp"}, // 1st row (White pawns)
     {"00", "00", "00", "00", "00", "00", "00", "00"}, // 2nd row (empty)
     {"00", "00", "00", "00", "00", "00", "00", "00"}, // 3rd row (empty)
     {"00", "00", "00", "00", "00", "00", "00", "00"}, // 4th row (empty)
     {"00", "00", "00", "00", "00", "00", "00", "00"}, // 5rd row (empty)
     {"Bp", "Bp", "Bp", "Bp", "Bp", "Bp", "Bp", "Bp"}, // 6th row (Black pawns)
-    {"Br", "Bk", "Bb", "Bq", "BK", "Bb", "Bk", "Br"}  // 7th row (Black pieces)
+    {"Br", "00", "00", "00", "BK", "00", "00", "Br"}  // 7th row (Black pieces)
 };
 bool gameinprocess = true;
 int turn = 0;
@@ -62,7 +64,13 @@ struct Move
 Piece enPassantPiece; // Store the latest piece which has been done an en passant 
 Move enPassantMove;
 bool whiteCanCastle = true;
+bool whiteRookOnHHasMoved = false; // This should be as note on the piece in the future if board contains Piece objects instead of strings
+bool whiteRookOnAHasMoved = false; 
 bool blackCanCastle = true;
+bool blackRookOnHHasMoved = false; 
+bool blackRookOnAHasMoved = false;
+bool whiteInCheck = false; // Has implemented setting check to true
+bool blackInCheck = false; 
 // Forward declarations to handle mutual recursion
 void movePiece(string piece, string startPos);
 vector<Move> getValidMoves(Piece piece);
@@ -203,12 +211,34 @@ vector<Move> calculateMoves(vector<Move> moves, int pieceCol, int pieceRow, bool
     return moves;
 }
 
-// Make a seperate file for this
+// Checks if player has pieces in the way
+bool pieceInTheWay(int direction, int steps) {
+    int row = turn % 2 == 0 ? 0 : 7;
+    int currentCol = 4;
+    bool pieceInTheWay = false;
+    
+    for (size_t i = 1; i < steps; i++)
+        {
+            currentCol += direction;
+            if(board[row][currentCol] != "00") {
+                pieceInTheWay = true;
+                break;
+            }
+        }
+    return pieceInTheWay; 
+}
+
+// Returns valid moves for the piece.
 vector<Move> getValidMoves(Piece piece)
 {
     vector<Move> moves;
     int pieceCol = piece.col;
     int pieceRow = piece.row;
+
+    if(whiteInCheck || blackInCheck && piece.name[1] != 'K') {
+        cout << "You are in check! Please move the king.\n";
+        return moves;
+    }
 
     if (piece.name[1] == 'r') // rook
     {
@@ -246,6 +276,24 @@ vector<Move> getValidMoves(Piece piece)
     {
         moves = calculateMoves(moves, pieceCol, pieceRow, true, true, true);
         // Check for castling
+        bool canCastle = turn % 2 == 0 ? whiteCanCastle : blackCanCastle;
+        bool isInCheck = turn % 2 == 0 ? whiteInCheck : blackInCheck;
+        
+        if(canCastle && !isInCheck) {
+            // Checks castle for the two directions
+            bool pieceObstructingKingSide = pieceInTheWay(1, 3);
+            bool rookHasBeenMovedKingSide = turn % 2 == 0 ? whiteRookOnHHasMoved : blackRookOnHHasMoved;
+            if(!pieceObstructingKingSide && !rookHasBeenMovedKingSide) {
+                moves.push_back(Move(pieceCol + 2, pieceRow)); 
+            }
+            bool pieceObstructingQueenSide = pieceInTheWay(-1, 4);
+            bool rookHasBeenMovedQueenSide = turn % 2 == 0 ? whiteRookOnAHasMoved : blackRookOnAHasMoved;
+            if(!pieceObstructingQueenSide && !rookHasBeenMovedQueenSide) {
+                moves.push_back(Move(pieceCol - 2, pieceRow)); 
+            }
+        } 
+        // We allow the king to move to squares where it is under attack even though it cannot by the official rules
+        // It should not be able to castle if its in check, AND the player should only be able to move king. 
     }
     if (piece.name[1] == 'q') // queen
     {
@@ -322,7 +370,7 @@ void executeMove(string move, Piece piece)
 {
     int row = move[1] - '0' - 1;
     int col = move[0] - 'a';
-    Piece attackedPiece = getPiece(move);
+    Piece attackedPiece = getPiece(move); // Maybe rename Piece to Field
 
     if (attackedPiece.name[1] == 'K')
     {
@@ -330,6 +378,33 @@ void executeMove(string move, Piece piece)
         string winner = turn % 2 == 0 ? "White" : "Black";
         cout << winner << " won! Congratulations.";
         return;
+    }
+
+    if(piece.name[1] == 'K') {
+        if(turn % 2 == 0) {
+            whiteCanCastle = false;
+        } else {
+            blackCanCastle = false;
+        }
+        bool moveWasCastle = abs(piece.col - col) == 2;
+        string rookName = turn % 2 == 0 ? "Wr": "Br";
+        if(moveWasCastle) {
+            // Move the rook
+            if(piece.col - col < 0) { // Kingside
+                board[piece.row][piece.col + 1] = rookName; 
+                board[piece.row][7] = "00";
+            } else { // Queenside
+                board[piece.row][piece.col - 1] = rookName; 
+                board[piece.row][0] = "00";
+            }
+        }
+    } 
+    if(piece.name[1] == 'r') {
+        if(turn % 2 == 0) {
+            (col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
+        } else {
+            (col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
+        }
     }
 
     if(piece.name[1] == 'p') {
