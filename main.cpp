@@ -26,6 +26,8 @@ string board[8][8] = {
 };
 bool gameinprocess = true;
 int turn = 0;
+int gamemode = 1; // Defaults to local game
+int difficulty = 1;
 
 struct Piece
 {
@@ -61,7 +63,7 @@ struct Move
         os << static_cast<char>(move.col + 'a') << static_cast<char>(move.row + 1 + '0');
         return os;
     }
-};
+}; // Move should maybe also keep information about where the move was from instead of just to. 
 
 Piece enPassantPiece; // Store the latest piece which has been done an en passant 
 Move enPassantMove;
@@ -106,12 +108,10 @@ void printBoardBlack()
     cout << "  h  g  f  e  d  c  b  a\n";
 }
 
-// Get piece from a move, eg. from a2
-Piece getPiece(string field)
+// Get the piece from the field
+Piece getPiece(Move field)
 {
-    int row = field[1] - '0' - 1;
-    int col = tolower(field[0]) - 'a'; // ASCII conversion to map from char to int. int is needed for coordinates in array.
-    return Piece(board[row][col], col, row);
+    return Piece(board[field.row][field.col], field.col, field.row);
 }
 
 bool validateInput(string field)
@@ -138,7 +138,9 @@ bool validateSelection(string field)
     {
         return false;
     }
-    Piece piece = getPiece(field);
+    int row = field[1] - '0' - 1;
+    int col = tolower(field[0]) - 'a'; // ASCII conversion to map from char to int. int is needed for coordinates in array.
+    Piece piece = getPiece(Move(col, row));
     if (piece.name == "00")
     {
         cout << "The field you selected is empty.\n";
@@ -373,6 +375,23 @@ bool currentPlayerIsChecked() {
     return false;
 }
 
+// Checks if the current player will be in check after moving the piece. 
+bool inCheckAfterMove(int moveToRow, int moveToCol, Piece piece) {
+    bool inCheck = false;
+    string removedPieceName = board[moveToRow][moveToCol];
+    board[moveToRow][moveToCol] = piece.name;
+    board[piece.row][piece.col] = "00";
+    if(currentPlayerIsChecked()) {
+        cout << "You cannot make that move. You are in check.\n";
+        // Move back
+        board[moveToRow][moveToCol] = removedPieceName;
+        board[piece.row][piece.col] = piece.name;
+        inCheck = true;
+    }
+    
+    return inCheck;
+}
+
 // Checks the move to the provided field using the provided piece is valid
 bool validateMove(string field, Piece piece)
 {
@@ -394,30 +413,17 @@ bool validateMove(string field, Piece piece)
         cout << "\n";
         return false;
     }
-    // Check if player is still in check after the move, by doing it, then reverse back
-    string removedPieceName = board[moveToRow][moveToCol];
-    board[moveToRow][moveToCol] = piece.name;
-    board[piece.row][piece.col] = "00";
-    if(currentPlayerIsChecked()) {
-        cout << "You cannot make that move. You are in check.\n";
-        // Move back
-        board[moveToRow][moveToCol] = removedPieceName;
-        board[piece.row][piece.col] = piece.name;
+    // Check if player is in check after the move, by doing it, then reverse back
+    bool playerInCheckAfterMove = inCheckAfterMove(moveToRow, moveToCol, piece);
+    if(playerInCheckAfterMove) {
         return false;
     }
-    // Move back
-    board[moveToRow][moveToCol] = removedPieceName;
-    board[piece.row][piece.col] = piece.name; // Could make this smarter so i dont reuse the above code
-
-
 
     return true;
 }
 
-void executeMove(string move, Piece piece)
+void executeMove(Move move, Piece piece)
 {
-    int row = move[1] - '0' - 1;
-    int col = move[0] - 'a';
     Piece attackedPiece = getPiece(move); // Maybe rename Piece to Field
 
     if (attackedPiece.name[1] == 'K')
@@ -434,11 +440,11 @@ void executeMove(string move, Piece piece)
         } else {
             blackCanCastle = false;
         }
-        bool moveWasCastle = abs(piece.col - col) == 2;
+        bool moveWasCastle = abs(piece.col - move.col) == 2;
         string rookName = turn % 2 == 0 ? "Wr": "Br";
         if(moveWasCastle) {
             // Move the rook
-            if(piece.col - col < 0) { // Kingside
+            if(piece.col - move.col < 0) { // Kingside
                 board[piece.row][piece.col + 1] = rookName; 
                 board[piece.row][7] = "00";
             } else { // Queenside
@@ -449,24 +455,24 @@ void executeMove(string move, Piece piece)
     } 
     if(piece.name[1] == 'r') {
         if(turn % 2 == 0) {
-            (col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
+            (move.col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
         } else {
-            (col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
+            (move.col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
         }
     }
 
     if(piece.name[1] == 'p') {
-        bool twoStepMove = abs(row - piece.row) - 2 == 0; // maybe combine this into the checkEnPassant method
+        bool twoStepMove = abs(move.row - piece.row) - 2 == 0; // maybe combine this into the checkEnPassant method
         if(twoStepMove) {
             checkEnPassant(attackedPiece);
         }
-        if(Move(col, row) == enPassantMove) {
+        if(move == enPassantMove) {
             // Take the piece behind the en passant move
             board[enPassantPiece.row][enPassantPiece.col] = "00";
         }
     }
 
-    board[row][col] = piece.name;
+    board[move.row][move.col] = piece.name;
     board[piece.row][piece.col] = "00";
 }
 
@@ -478,9 +484,12 @@ Piece selectPiece()
         cout << "Select piece: ";
         cin >> field;
         bool validInput = validateSelection(field);
+        int row = field[1] - '0' - 1;
+        int col = field[0] - 'a';
+        Move move = Move(col, row); // Very weird that we need to provide a Move (which really is a field) to get a Piece. I need to change the way that Moves and Fields are handled. 
         if (validInput)
         {
-            return getPiece(field);
+            return getPiece(move);
         }
         else
         {
@@ -500,15 +509,61 @@ bool movePiece(Piece piece)
     }
 
     bool validMove = validateMove(move, piece);
+    int row = move[1] - '0' - 1;
+    int col = move[0] - 'a';
+    Move moveToExecute = Move(col, row);
     if (validMove)
     {
-        executeMove(move, piece);
+        executeMove(moveToExecute, piece);
         turn++;
         return true;
     }
     cout << "Please retype move: \n";
     movePiece(piece);
     return false;
+}
+
+// Moves a random piece
+void computerMoveRandom() {
+    char currentPlayer = turn % 2 == 0 ? 'W' : 'B';
+    vector<Piece> possiblePieces;
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            string name = board[row][col];
+            if(name[0] != currentPlayer) {
+                break;
+            }
+            Piece piece = Piece(name, col, row);
+            vector<Move> moves = getValidMoves(piece);
+            if(moves.size() > 0) {
+                possiblePieces.push_back(piece);
+            }
+        }
+    }
+    srand(time(0)); // seed for randomness
+    int randomNum = rand() % possiblePieces.size();
+    Piece randomPiece = possiblePieces[randomNum];
+    vector<Move> movesForRandomPiece = getValidMoves(randomPiece);
+    randomNum = rand() % movesForRandomPiece.size();
+    Move randomMove = movesForRandomPiece[randomNum];
+    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove.row, randomMove.col, randomPiece);
+    if(!moveSetsItselfInCheck) {
+        executeMove(randomMove, randomPiece);
+        turn++;
+        cout << "Black moved " << randomPiece.name << " from " << Move(randomPiece.col, randomPiece.row) << " to " << randomMove << "\n";
+        printBoard();
+    } else {
+        computerMoveRandom();
+    }
+}
+
+void computerMove() {
+    switch (difficulty) {
+        case 1:
+        computerMoveRandom();
+        break;
+        // and so on
+    }
 }
 
 void handleTurn()
@@ -522,8 +577,12 @@ void handleTurn()
     }
     else
     {
-        cout << "Black's turn\n";
-        printBoardBlack();
+        if(gamemode == 2) { // For now computer is always black
+            computerMove();
+        } else {
+            cout << "Black's turn\n";
+            printBoardBlack();
+        }
     }
     Piece piece = selectPiece();
     bool succes = movePiece(piece);
@@ -536,6 +595,17 @@ void handleTurn()
 
 int main()
 {
+    cout << "Welcome to the game of chess.\n";
+    cout << "Press '1' for local game or '2' to play against computer: ";
+    cin >> gamemode;
+    if(gamemode == 2) {
+        cout << "Select computer difficulty:\n";
+        cout << "1. Easy (random moves)\n";
+        cout << "2. Medium (greedy moves)\n";
+        cout << "3. Hard (future)\n";
+        cout << "Enter your choice (1-3): ";
+        cin >> difficulty;
+    }
     while (gameinprocess)
     {
         handleTurn();
