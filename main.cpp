@@ -13,60 +13,65 @@ using namespace std;
 // - Make a check to see if the piece is in check after a move
 // - In the future have actual piece objects on the board.
 
-// Array 0 indexed. a2=row: 1, col: 0
-string board[8][8] = {
-    {"Wr", "Wk", "Wb", "Wq", "WK", "Wb", "Wk", "Wr"}, // 0th row (White pieces)
-    {"Wp", "Wp", "Wp", "Wp", "00", "Wp", "Wp", "Wp"}, // 1st row (White pawns)
-    {"00", "00", "00", "00", "00", "00", "00", "00"}, // 2nd row (empty)
-    {"00", "00", "00", "00", "00", "00", "00", "00"}, // 3rd row (empty)
-    {"00", "00", "00", "00", "00", "00", "00", "00"}, // 4th row (empty)
-    {"00", "00", "00", "00", "00", "00", "00", "00"}, // 5rd row (empty)
-    {"Bp", "Bp", "Bp", "Bp", "00", "Bp", "Bp", "Bp"}, // 6th row (Black pawns)
-    {"Br", "Bk", "Bb", "Bq", "BK", "Bb", "Bk", "Br"}  // 7th row (Black pieces)
-};
 bool gameinprocess = true;
 int turn = 0;
 int gamemode = 1; // Defaults to local game
 int difficulty = 1;
 
-struct Piece
+struct Field
 {
-    string name;
     int col;
     int row;
-    string note;
+    Field(int c = -1, int r = -1) : col(c), row(r) {}
 
-    Piece(string n = "", int c = 100, int r = 100, string note = "") : name(n), col(c), row(r), note(note) {}
-
-    bool operator==(const Piece& other) const
+    bool operator==(const Field &other) const
     {
-        return name == other.name && 
-               col == other.col && 
-               row == other.row && 
-               note == other.note;
-    }
-};
-
-struct Move
-{
-    int col;
-    int row;
-    Move(int c = 100, int r = 100) : col(c), row(r) {}
-
-    bool operator==(const Move &other) const
-    { // To be able to compare if two Move structs are equal.
         return col == other.col && row == other.row;
     }
 
-    friend ostream &operator<<(ostream &os, const Move &move)
+    friend ostream &operator<<(ostream &os, const Field &move)
     {
         os << static_cast<char>(move.col + 'a') << static_cast<char>(move.row + 1 + '0');
         return os;
     }
-}; // Move should maybe also keep information about where the move was from instead of just to. 
+};
+
+struct Piece
+{
+    string name;
+    Field field;
+    string note;
+
+    Piece(string n = "00", Field field = Field(), string note = "") : name(n), field(field), note(note) {}
+
+    bool operator==(const Piece& other) const
+    {
+        return name == other.name && 
+               field.col == other.field.col && 
+               field.row == other.field.row && 
+               note == other.note;
+    }
+};
+
+// Array 0 indexed. a2=row: 1, col: 0
+Piece board[8][8] = {
+    {Piece("Wr", Field(0, 0), ""), Piece("Wk", Field(1, 0), ""), Piece("Wb", Field(2, 0), ""), Piece("Wq", Field(3, 0), ""), Piece("WK", Field(4, 0), ""), Piece("Wb", Field(5, 0), ""), Piece("Wk", Field(6, 0), ""), Piece("Wr", Field(7, 0), "")}, // 0th row (White pieces)
+    {Piece("Wp", Field(0, 1), ""), Piece("Wp", Field(1, 1), ""), Piece("Wp", Field(2, 1), ""), Piece("Wp", Field(3, 1), ""), Piece("Wp", Field(4, 1), ""), Piece("Wp", Field(5, 1), ""), Piece("Wp", Field(6, 1), ""), Piece("Wp", Field(7, 1), "")}, // 1st row (White pawns)
+    {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 2nd row (empty)
+    {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 3rd row (empty)
+    {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 4th row (empty)
+    {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 5rd row (empty)
+    {Piece("Bp", Field(0, 6), ""), Piece("Bp", Field(1, 6), ""), Piece("Bp", Field(2, 6), ""), Piece("Bp", Field(3, 6), ""), Piece("Bp", Field(4, 6), ""), Piece("Bp", Field(5, 6), ""), Piece("Bp", Field(6, 6), ""), Piece("Bp", Field(7, 6), "")}, // 6th row (Black pawns)
+    {Piece("Br", Field(0, 7), ""), Piece("Bk", Field(1, 7), ""), Piece("Bb", Field(2, 7), ""), Piece("Bq", Field(3, 7), ""), Piece("BK", Field(4, 7), ""), Piece("Wb", Field(5, 7), ""), Piece("Wk", Field(6, 7), ""), Piece("Br", Field(7, 7), "")}  // 7th row (Black pieces)
+};
+
+// Representing an empty field
+Piece createEmptyPiece() {
+    return Piece();
+}
 
 Piece enPassantPiece; // Store the latest piece which has been done an en passant 
-Move enPassantMove;
+Field enPassantMove;
 bool whiteCanCastle = true;
 bool whiteRookOnHHasMoved = false; // This should be as note on the piece in the future if board contains Piece objects instead of strings
 bool whiteRookOnAHasMoved = false; 
@@ -74,19 +79,14 @@ bool blackCanCastle = true;
 bool blackRookOnHHasMoved = false; 
 bool blackRookOnAHasMoved = false;
 
-// Forward declarations to handle mutual recursion
-void movePiece(string piece, string startPos);
-vector<Move> getValidMoves(Piece piece);
-
 void printBoard()
 {
-    cout << "The board is:\n";
     for (int i = 7; i >= 0; i--)
     {
         cout << i + 1 << " ";
         for (int j = 0; j < 8; j++)
         {
-            cout << board[i][j] << " ";
+            cout << board[i][j].name << " ";
         }
         cout << "\n";
     }
@@ -95,34 +95,27 @@ void printBoard()
 
 void printBoardBlack()
 { // Board from blacks perspective
-    cout << "The board is:\n";
     for (int i = 0; i < 8; i++)
     {
         cout << i + 1 << " ";
         for (int j = 7; j >= 0; j--)
         {
-            cout << board[i][j] << " ";
+            cout << board[i][j].name << " ";
         }
         cout << "\n";
     }
     cout << "  h  g  f  e  d  c  b  a\n";
 }
 
-// Get the piece from the field
-Piece getPiece(Move field)
+bool validateInput(Field field)
 {
-    return Piece(board[field.row][field.col], field.col, field.row);
-}
-
-bool validateInput(string field)
-{
-    if (tolower(field[0]) < 'a' || tolower(field[0]) > 'h')
+    if (field.col < 0 || field.col > 7)
     {
         cout << "Move must start with a letter between a and h\n";
         return false;
     }
 
-    if (field[1] < '1' || field[1] > '8')
+    if (field.row < 0 || field.row > 7)
     {
         cout << "Move must end with a number between 1 and 8\n";
         return false;
@@ -131,38 +124,8 @@ bool validateInput(string field)
     return true;
 }
 
-bool validateSelection(string field)
-{
-    bool validInput = validateInput(field);
-    if (!validInput)
-    {
-        return false;
-    }
-    int row = field[1] - '0' - 1;
-    int col = tolower(field[0]) - 'a'; // ASCII conversion to map from char to int. int is needed for coordinates in array.
-    Piece piece = getPiece(Move(col, row));
-    if (piece.name == "00")
-    {
-        cout << "The field you selected is empty.\n";
-        return false;
-    }
-    if (turn % 2 == 0 && piece.name[0] == 'B' || turn % 2 == 1 && piece.name[0] == 'W')
-    {
-        cout << "You cannot select an opponent piece.\n";
-        return false;
-    }
-    vector<Move> validMoves = getValidMoves(piece);
-    if (validMoves.size() == 0)
-    {
-        cout << field << " does not have any valid moves. Please select another piece. \n"; // - 'a' and - '0' to get correct ASCII representation
-        return false;
-        // Perhaps check for stalemate here
-    }
-    return true;
-}
-
 // General method for calculating valid moves which are not weird, so not for the pawn or knight
-vector<Move> calculateMoves(vector<Move> moves, Piece piece, bool onestep, bool diagonal, bool cardinal)
+vector<Field> calculateMoves(vector<Field> moves, Piece piece, bool onestep, bool diagonal, bool cardinal)
 {
     int direction[8][2] = {
         // {col, row}
@@ -180,8 +143,8 @@ vector<Move> calculateMoves(vector<Move> moves, Piece piece, bool onestep, bool 
     int directionsEnd = diagonal ? 8 : 4;
     for (size_t i = directionsStart; i < directionsEnd; i++)
     {
-        int currentCol = piece.col;
-        int currentRow = piece.row;
+        int currentCol = piece.field.col;
+        int currentRow = piece.field.row;
         bool hasRunIntoEnemyPiece = false;
 
         while (true)
@@ -193,10 +156,10 @@ vector<Move> calculateMoves(vector<Move> moves, Piece piece, bool onestep, bool 
             {
                 break;
             }
-            string pieceOnField = board[currentRow][currentCol];
-            if (pieceOnField != "00")
+            Piece pieceOnCurrentField = board[currentRow][currentCol];
+            if (pieceOnCurrentField.name != "00")
             {
-                if (piece.name[0] == 'W' && pieceOnField[0] == 'B' || piece.name[0] == 'B' && pieceOnField[0] == 'W')
+                if (piece.name[0] == 'W' && pieceOnCurrentField.name[0] == 'B' || piece.name[0] == 'B' && pieceOnCurrentField.name[0] == 'W')
                 {
                     hasRunIntoEnemyPiece = true; // can only run into an enemy piece once (to capture)
                 }
@@ -205,7 +168,7 @@ vector<Move> calculateMoves(vector<Move> moves, Piece piece, bool onestep, bool 
                     break; // has run into own piece
                 }
             }
-            moves.push_back(Move(currentCol, currentRow));
+            moves.push_back(Field(currentCol, currentRow));
             if (onestep)
             {
                 break;
@@ -224,7 +187,7 @@ bool pieceInTheWay(int direction, int steps) {
     for (size_t i = 1; i < steps; i++)
         {
             currentCol += direction;
-            if(board[row][currentCol] != "00") {
+            if(board[row][currentCol].name != "00") {
                 pieceInTheWay = true;
                 break;
             }
@@ -233,18 +196,19 @@ bool pieceInTheWay(int direction, int steps) {
 }
 
 // Returns valid moves for the piece.
-vector<Move> getValidMoves(Piece piece)
+vector<Field> getValidMoves(Piece piece)
 {
-    vector<Move> moves;
-    int pieceCol = piece.col;
-    int pieceRow = piece.row;
+    vector<Field> moves;
+    int pieceCol = piece.field.col;
+    int pieceRow = piece.field.row;
+    char pieceType = piece.name[1];
 
-    if (piece.name[1] == 'r') // rook
+    if (pieceType == 'r') // rook
     {
         moves = calculateMoves(moves, piece, false, false, true);
         // Check for castling
     }
-    if (piece.name[1] == 'k') // knight
+    if (pieceType == 'k') // knight
     {
         int direction[8][2] = {
             // {col, row}
@@ -261,18 +225,18 @@ vector<Move> getValidMoves(Piece piece)
         {
             int col = pieceCol + direction[i][0];
             int row = pieceRow + direction[i][1];
-            bool ownPieceBlocks = piece.name[0] == 'W' ?  board[row][col][0] == 'W' : board[row][col][0] == 'B';
+            bool ownPieceBlocks = piece.name[0] == 'W' ?  board[row][col].name[0] == 'W' : board[row][col].name[0] == 'B';
             if (col >= 0 && col <= 7 && row >= 0 && row <= 7 && !ownPieceBlocks)
             {
-                moves.push_back(Move(col, row));
+                moves.push_back(Field(col, row));
             }
         }
     }
-    if (piece.name[1] == 'b') // bishop
+    if (pieceType == 'b') // bishop
     {
         moves = calculateMoves(moves, piece, false, true, false);
     }
-    if (piece.name[1] == 'K') // king
+    if (pieceType == 'K') // king
     {
         moves = calculateMoves(moves, piece, true, true, true);
         // Check for castling
@@ -283,46 +247,46 @@ vector<Move> getValidMoves(Piece piece)
             bool pieceObstructingKingSide = pieceInTheWay(1, 3);
             bool rookHasBeenMovedKingSide = turn % 2 == 0 ? whiteRookOnHHasMoved : blackRookOnHHasMoved;
             if(!pieceObstructingKingSide && !rookHasBeenMovedKingSide) {
-                moves.push_back(Move(pieceCol + 2, pieceRow)); 
+                moves.push_back(Field(pieceCol + 2, pieceRow)); 
             }
             bool pieceObstructingQueenSide = pieceInTheWay(-1, 4);
             bool rookHasBeenMovedQueenSide = turn % 2 == 0 ? whiteRookOnAHasMoved : blackRookOnAHasMoved;
             if(!pieceObstructingQueenSide && !rookHasBeenMovedQueenSide) {
-                moves.push_back(Move(pieceCol - 2, pieceRow)); 
+                moves.push_back(Field(pieceCol - 2, pieceRow)); 
             }
         } 
         // We allow the king to move to squares where it is under attack even though it cannot by the official rules
         // It should not be able to castle if its in check, AND the player should only be able to move king. 
     }
-    if (piece.name[1] == 'q') // queen
+    if (pieceType == 'q') // queen
     {
         moves = calculateMoves(moves, piece, false, true, true);
     }
-    if (piece.name[1] == 'p') // Pawn
+    if (pieceType == 'p') // Pawn
     {
         int moveDirection = piece.name[0] == 'W' ? 1 : -1;
         int boostRow = piece.name[0] == 'W' ? 1 : 6;
-        string pieceInFront = board[pieceRow + moveDirection][pieceCol];
-        string pieceInFrontFront = board[pieceRow + moveDirection + moveDirection][pieceCol];
-        bool aPieceInFront = pieceInFront != "00";
-        bool aPieceInFrontFront = pieceInFront != "00";
+        Piece pieceInFront = board[pieceRow + moveDirection][pieceCol];
+        Piece pieceInFrontFront = board[pieceRow + moveDirection + moveDirection][pieceCol];
+        bool aPieceInFront = pieceInFront.name != "00";
+        bool aPieceInFrontFront = pieceInFront.name != "00";
         if (pieceRow + moveDirection <= 7 && pieceRow + moveDirection >= 0 && !aPieceInFront)
         {
-            moves.push_back(Move(pieceCol, pieceRow + moveDirection));
+            moves.push_back(Field(pieceCol, pieceRow + moveDirection));
         }
         if (pieceRow == boostRow)
         {
 
             if (pieceRow + moveDirection + moveDirection <= 7 && pieceRow + moveDirection + moveDirection >= 0 && !aPieceInFrontFront)
             {
-                moves.push_back(Move(pieceCol, pieceRow + moveDirection + moveDirection));
+                moves.push_back(Field(pieceCol, pieceRow + moveDirection + moveDirection));
             }
         }
 
         // Check if there is a valid en passant move
         if (enPassantPiece.note == "enPassant" + to_string(turn - 1))
         {
-            Move move = Move(enPassantPiece.col, enPassantPiece.row + moveDirection);
+            Field move = Field(enPassantPiece.field.col, enPassantPiece.field.row + moveDirection);
             enPassantMove = move;
             moves.push_back(move); 
 
@@ -332,11 +296,38 @@ vector<Move> getValidMoves(Piece piece)
     return moves;
 }
 
+bool validateSelection(Field field)
+{
+    bool validInput = validateInput(field);
+    if (!validInput)
+    {
+        return false;
+    }
+    Piece piece = board[field.row][field.col];
+    if (piece.name == "00")
+    {
+        cout << "The field you selected is empty.\n";
+        return false;
+    }
+    if (turn % 2 == 0 && piece.name[0] == 'B' || turn % 2 == 1 && piece.name[0] == 'W')
+    {
+        cout << "You cannot select an opponent piece.\n";
+        return false;
+    }
+    vector<Field> validMoves = getValidMoves(piece);
+    if (validMoves.size() == 0)
+    {
+        cout << field << " does not have any valid moves. Please select another piece. \n"; // - 'a' and - '0' to get correct ASCII representation
+        return false;
+        // Perhaps check for stalemate here
+    }
+    return true;
+}
+
 // Check if pawn did en passant and adds it as an en passant target if so
 void checkEnPassant(Piece piece) {
-    int oneBack = turn % 2 == 0 ? -1 : 1;
     string opponent = turn % 2 == 0 ? "B" : "W";
-    bool movedNextToAPawn = piece.col > 0 && board[piece.row][piece.col - 1] == opponent + "p" || piece.col < 7 && board[piece.row][piece.col + 1] == opponent + "p" ;
+    bool movedNextToAPawn = piece.field.col - 1 > 0 && board[piece.field.row][piece.field.col - 1].name == opponent + "p" || piece.field.col + 1 < 7 && board[piece.field.row][piece.field.col + 1].name == opponent + "p" ;
     if(movedNextToAPawn) {
         piece.note = "enPassant" + to_string(turn);
         enPassantPiece = piece;
@@ -347,10 +338,10 @@ void checkEnPassant(Piece piece) {
 
 // Checks if the opponent is checked by the provided piece
 bool pieceHasCheck(Piece piece) {
-    vector<Move> moves = getValidMoves(piece);
+    vector<Field> moves = getValidMoves(piece);
     string opponentKing = piece.name[0] == 'W' ? "BK" : "WK";
     for(size_t i = 0; i < moves.size(); ++i) {
-        if(board[moves[i].row][moves[i].col] == opponentKing) {
+        if(board[moves[i].row][moves[i].col].name == opponentKing) {
             return true;
         }
     }
@@ -361,11 +352,11 @@ bool currentPlayerIsChecked() {
     char currentPlayer = turn % 2 == 0 ? 'W' : 'B';
     for (int row = 0; row < 8; ++row) {
         for (int col = 0; col < 8; ++col) {
-            string name = board[row][col];
-            if(name[0] == currentPlayer) {
+            char player = board[row][col].name[0];
+            if(player == currentPlayer) {
                 break;
             }
-            bool pieceIsChecking = pieceHasCheck(Piece(name, col, row));
+            bool pieceIsChecking = pieceHasCheck(board[row][col]);
             if(pieceIsChecking) {
                 return true;
             }
@@ -376,16 +367,18 @@ bool currentPlayerIsChecked() {
 }
 
 // Checks if the current player will be in check after moving the piece. 
-bool inCheckAfterMove(int moveToRow, int moveToCol, Piece piece) {
+bool inCheckAfterMove(Field moveToField, Piece piece) {
     bool inCheck = false;
-    string removedPieceName = board[moveToRow][moveToCol];
-    board[moveToRow][moveToCol] = piece.name;
-    board[piece.row][piece.col] = "00";
+    int moveToRow = moveToField.row;
+    int moveToCol = moveToField.col;
+    Piece removedPiece = board[moveToRow][moveToCol];
+    board[moveToRow][moveToCol] = piece;
+    board[piece.field.row][piece.field.col] = createEmptyPiece();
     if(currentPlayerIsChecked()) {
         cout << "You cannot make that move. You are in check.\n";
         // Move back
-        board[moveToRow][moveToCol] = removedPieceName;
-        board[piece.row][piece.col] = piece.name;
+        board[moveToRow][moveToCol] = removedPiece;
+        board[piece.field.row][piece.field.col] = piece;
         inCheck = true;
     }
     
@@ -393,19 +386,17 @@ bool inCheckAfterMove(int moveToRow, int moveToCol, Piece piece) {
 }
 
 // Checks the move to the provided field using the provided piece is valid
-bool validateMove(string field, Piece piece)
+bool validateMove(Field fieldOfMove, Piece piece)
 {
-    bool validInput = validateInput(field);
-    int moveToCol = field[0] - 'a';
-    int moveToRow = field[1] - '0' - 1;
+    bool validInput = validateInput(fieldOfMove);
     if (!validInput)
     {
         return false;
     }
-    vector<Move> validMoves = getValidMoves(piece);
-    if (find(validMoves.begin(), validMoves.end(), Move(moveToCol, moveToRow)) == validMoves.end()) // check if move is not in validmoves
+    vector<Field> validMoves = getValidMoves(piece);
+    if (find(validMoves.begin(), validMoves.end(), fieldOfMove) == validMoves.end()) // check if move is not in validmoves
     {
-        cout << "sorry, " << Move(moveToCol, moveToRow) << " is not a valid move, only valid moves are: ";
+        cout << "sorry, " << fieldOfMove << " is not a valid move, only valid moves are: ";
         for (size_t i = 0; i < validMoves.size(); i++)
         {
             cout << validMoves[i] << ", ";
@@ -414,7 +405,7 @@ bool validateMove(string field, Piece piece)
         return false;
     }
     // Check if player is in check after the move, by doing it, then reverse back
-    bool playerInCheckAfterMove = inCheckAfterMove(moveToRow, moveToCol, piece);
+    bool playerInCheckAfterMove = inCheckAfterMove(fieldOfMove, piece);
     if(playerInCheckAfterMove) {
         return false;
     }
@@ -422,9 +413,9 @@ bool validateMove(string field, Piece piece)
     return true;
 }
 
-void executeMove(Move move, Piece piece)
+void executeMove(Field moveToField, Piece piece)
 {
-    Piece attackedPiece = getPiece(move); // Maybe rename Piece to Field
+    Piece attackedPiece = board[moveToField.row][moveToField.col]; // Maybe rename Piece to Field
 
     if (attackedPiece.name[1] == 'K')
     {
@@ -440,40 +431,40 @@ void executeMove(Move move, Piece piece)
         } else {
             blackCanCastle = false;
         }
-        bool moveWasCastle = abs(piece.col - move.col) == 2;
+        bool moveWasCastle = abs(piece.field.col - moveToField.col) == 2;
         string rookName = turn % 2 == 0 ? "Wr": "Br";
         if(moveWasCastle) {
             // Move the rook
-            if(piece.col - move.col < 0) { // Kingside
-                board[piece.row][piece.col + 1] = rookName; 
-                board[piece.row][7] = "00";
+            if(piece.field.col - moveToField.col < 0) { // Kingside
+                board[piece.field.row][piece.field.col + 1].name = rookName; 
+                board[piece.field.row][7].name = "00";
             } else { // Queenside
-                board[piece.row][piece.col - 1] = rookName; 
-                board[piece.row][0] = "00";
+                board[piece.field.row][piece.field.col - 1].name = rookName; 
+                board[piece.field.row][0].name = "00";
             }
         }
     } 
     if(piece.name[1] == 'r') {
         if(turn % 2 == 0) {
-            (move.col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
+            (moveToField.col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
         } else {
-            (move.col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
+            (moveToField.col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
         }
     }
 
     if(piece.name[1] == 'p') {
-        bool twoStepMove = abs(move.row - piece.row) - 2 == 0; // maybe combine this into the checkEnPassant method
+        bool twoStepMove = abs(moveToField.row - piece.field.row) - 2 == 0; // maybe combine this into the checkEnPassant method
         if(twoStepMove) {
             checkEnPassant(attackedPiece);
         }
-        if(move == enPassantMove) {
+        if(moveToField == enPassantMove) {
             // Take the piece behind the en passant move
-            board[enPassantPiece.row][enPassantPiece.col] = "00";
+            board[enPassantPiece.field.row][enPassantPiece.field.col] = createEmptyPiece();
         }
     }
 
-    board[move.row][move.col] = piece.name;
-    board[piece.row][piece.col] = "00";
+    board[moveToField.row][moveToField.col] = piece;
+    board[piece.field.row][piece.field.col] = createEmptyPiece();
 }
 
 Piece selectPiece()
@@ -483,13 +474,12 @@ Piece selectPiece()
     {
         cout << "Select piece: ";
         cin >> field;
-        bool validInput = validateSelection(field);
         int row = field[1] - '0' - 1;
         int col = field[0] - 'a';
-        Move move = Move(col, row); // Very weird that we need to provide a Move (which really is a field) to get a Piece. I need to change the way that Moves and Fields are handled. 
+        bool validInput = validateSelection(Field(col, row));
         if (validInput)
         {
-            return getPiece(move);
+            return board[row][col];
         }
         else
         {
@@ -501,20 +491,20 @@ Piece selectPiece()
 bool movePiece(Piece piece)
 {
     string move;
-    cout << "Move " << piece.name << "(" << "col: " << piece.col << "row: " << piece.row << ")" << " to: ";
+    cout << "Move " << piece.name << "(" << "col: " << piece.field.col << "row: " << piece.field.row << ")" << " to: ";
     cin >> move;
     if (move == "back")
     {
         return false;
     }
 
-    bool validMove = validateMove(move, piece);
-    int row = move[1] - '0' - 1;
+    int row = move[1] - '0' - 1; // ASCII conversion from string to int between 0-7
     int col = move[0] - 'a';
-    Move moveToExecute = Move(col, row);
+    Field fieldOfMove = Field(col, row);
+    bool validMove = validateMove(fieldOfMove, piece);
     if (validMove)
     {
-        executeMove(moveToExecute, piece);
+        executeMove(fieldOfMove, piece);
         turn++;
         return true;
     }
@@ -529,12 +519,12 @@ void computerMoveRandom() {
     vector<Piece> possiblePieces;
     for (int row = 0; row < 8; ++row) {
         for (int col = 0; col < 8; ++col) {
-            string name = board[row][col];
-            if(name[0] != currentPlayer) {
+            Piece piece = board[row][col];
+            char player = piece.name[0];
+            if(player != currentPlayer) {
                 break;
             }
-            Piece piece = Piece(name, col, row);
-            vector<Move> moves = getValidMoves(piece);
+            vector<Field> moves = getValidMoves(piece);
             if(moves.size() > 0) {
                 possiblePieces.push_back(piece);
             }
@@ -543,14 +533,14 @@ void computerMoveRandom() {
     srand(time(0)); // seed for randomness
     int randomNum = rand() % possiblePieces.size();
     Piece randomPiece = possiblePieces[randomNum];
-    vector<Move> movesForRandomPiece = getValidMoves(randomPiece);
+    vector<Field> movesForRandomPiece = getValidMoves(randomPiece);
     randomNum = rand() % movesForRandomPiece.size();
-    Move randomMove = movesForRandomPiece[randomNum];
-    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove.row, randomMove.col, randomPiece);
+    Field randomMove = movesForRandomPiece[randomNum];
+    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
     if(!moveSetsItselfInCheck) {
         executeMove(randomMove, randomPiece);
         turn++;
-        cout << "Black moved " << randomPiece.name << " from " << Move(randomPiece.col, randomPiece.row) << " to " << randomMove << "\n";
+        cout << "Black moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
         printBoard();
     } else {
         computerMoveRandom();
@@ -572,7 +562,7 @@ void handleTurn()
     //testMethod();
     if (turn % 2 == 0)
     {
-        cout << "White's turn\n";
+        cout << "\nWhite's turn\n";
         printBoard();
     }
     else
@@ -580,7 +570,7 @@ void handleTurn()
         if(gamemode == 2) { // For now computer is always black
             computerMove();
         } else {
-            cout << "Black's turn\n";
+            cout << "\nBlack's turn\n";
             printBoardBlack();
         }
     }

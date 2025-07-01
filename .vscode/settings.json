@@ -28,7 +28,8 @@
         "__split_buffer": "cpp",
         "string": "cpp",
         "iostream": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "__bit_reference": "cpp"
     },
     "cmake.sourceDirectory": "/Users/gustavnielsen/Documents/Kode.nosync/chess/build"
 }
