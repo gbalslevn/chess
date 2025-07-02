@@ -372,13 +372,15 @@ bool inCheckAfterMove(Field moveToField, Piece piece) {
     int moveToRow = moveToField.row;
     int moveToCol = moveToField.col;
     Piece removedPiece = board[moveToRow][moveToCol];
+    Field currentField = piece.field;
+    piece.field = moveToField;
     board[moveToRow][moveToCol] = piece;
     board[piece.field.row][piece.field.col] = createEmptyPiece();
     if(currentPlayerIsChecked()) {
         cout << "You cannot make that move. You are in check.\n";
         // Move back
         board[moveToRow][moveToCol] = removedPiece;
-        board[piece.field.row][piece.field.col] = piece;
+        board[currentField.row][currentField.col] = piece;
         inCheck = true;
     }
     
@@ -463,8 +465,10 @@ void executeMove(Field moveToField, Piece piece)
         }
     }
 
+    Field currentField = piece.field;
+    piece.field = moveToField;
     board[moveToField.row][moveToField.col] = piece;
-    board[piece.field.row][piece.field.col] = createEmptyPiece();
+    board[currentField.row][currentField.col] = createEmptyPiece();
 }
 
 Piece selectPiece()
@@ -540,8 +544,7 @@ void computerMoveRandom() {
     if(!moveSetsItselfInCheck) {
         executeMove(randomMove, randomPiece);
         turn++;
-        cout << "Black moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
-        printBoard();
+        cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
     } else {
         computerMoveRandom();
     }
@@ -552,7 +555,12 @@ void computerMove() {
         case 1:
         computerMoveRandom();
         break;
-        // and so on
+        case 2:
+        cout << "Not implemented lol";
+        break;
+        case 3:
+        cout << "Not implemented lol";
+        break;
     }
 }
 
@@ -569,6 +577,8 @@ void handleTurn()
     {
         if(gamemode == 2) { // For now computer is always black
             computerMove();
+            cout << "\nWhite's turn\n";
+            printBoard();
         } else {
             cout << "\nBlack's turn\n";
             printBoardBlack();
