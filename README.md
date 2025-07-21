@@ -32,6 +32,7 @@ Changes to build is configured in CMakeLists.txt. To apply changes do `cmake ./b
 
 You can also combine the command to a single command `cmake ./build && cmake --build .`
 To also run it you can then do `cmake ./build && cmake --build . && ./chess`
+If no changes has been made to CMakeLists.txt simply run the program with `cmake --build . && ./chess`
 
 
 

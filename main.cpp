@@ -3,15 +3,12 @@
 #include <vector>
 #include <unordered_map>
 #include "test.h"
+#include <map>
 using namespace std;
 
 // K=king, q=queen, p=pawn, k=knight, r=rook, b=bishop
 // Wq=white queen, Bq=black queen, .... and so on
 // 00=empty field
-
-// TODO: 
-// - Make a check to see if the piece is in check after a move
-// - In the future have actual piece objects on the board.
 
 bool gameinprocess = true;
 int turn = 0;
@@ -36,13 +33,16 @@ struct Field
     }
 };
 
+// Consider making a Move struct which keeps track of two fields (from, to) and a Piece. Would make some implementations easier. 
+
 struct Piece
 {
     string name;
     Field field;
     string note;
+    int value;
 
-    Piece(string n = "00", Field field = Field(), string note = "") : name(n), field(field), note(note) {}
+    Piece(string n = "00", Field field = Field(), string note = "", int value = 0) : name(n), field(field), note(note), value(value) {}
 
     bool operator==(const Piece& other) const
     {
@@ -51,18 +51,30 @@ struct Piece
                field.row == other.field.row && 
                note == other.note;
     }
+
+    // Needed to use Piece in a map. 
+    bool operator<(const Piece& other) const
+    {
+        if (name != other.name) 
+            return name < other.name;
+        if (field.row != other.field.row) 
+            return field.row < other.field.row;
+        if (field.col != other.field.col) 
+            return field.col < other.field.col;
+        return note < other.note;
+    }
 };
 
 // Array 0 indexed. a2=row: 1, col: 0
 Piece board[8][8] = {
-    {Piece("Wr", Field(0, 0), ""), Piece("Wk", Field(1, 0), ""), Piece("Wb", Field(2, 0), ""), Piece("Wq", Field(3, 0), ""), Piece("WK", Field(4, 0), ""), Piece("Wb", Field(5, 0), ""), Piece("Wk", Field(6, 0), ""), Piece("Wr", Field(7, 0), "")}, // 0th row (White pieces)
-    {Piece("Wp", Field(0, 1), ""), Piece("Wp", Field(1, 1), ""), Piece("Wp", Field(2, 1), ""), Piece("Wp", Field(3, 1), ""), Piece("Wp", Field(4, 1), ""), Piece("Wp", Field(5, 1), ""), Piece("Wp", Field(6, 1), ""), Piece("Wp", Field(7, 1), "")}, // 1st row (White pawns)
+    {Piece("Wr", Field(0, 0), "", 5), Piece("Wk", Field(1, 0), "", 3), Piece("Wb", Field(2, 0), "", 3), Piece("Wq", Field(3, 0), "", 9), Piece("WK", Field(4, 0), "", 10), Piece("Wb", Field(5, 0), "", 3), Piece("Wk", Field(6, 0), "", 3), Piece("Wr", Field(7, 0), "", 5)}, // 0th row (White pieces)
+    {Piece("Wp", Field(0, 1), "", 1), Piece("Wp", Field(1, 1), "", 1), Piece("Wp", Field(2, 1), "", 1), Piece("Wp", Field(3, 1), "", 1), Piece("Wp", Field(4, 1), "", 1), Piece("Wp", Field(5, 1), "", 1), Piece("Wp", Field(6, 1), "", 1), Piece("Wp", Field(7, 1), "", 1)}, // 1st row (White pawns)
     {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 2nd row (empty)
     {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 3rd row (empty)
     {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 4th row (empty)
     {Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece(), Piece()}, // 5rd row (empty)
-    {Piece("Bp", Field(0, 6), ""), Piece("Bp", Field(1, 6), ""), Piece("Bp", Field(2, 6), ""), Piece("Bp", Field(3, 6), ""), Piece("Bp", Field(4, 6), ""), Piece("Bp", Field(5, 6), ""), Piece("Bp", Field(6, 6), ""), Piece("Bp", Field(7, 6), "")}, // 6th row (Black pawns)
-    {Piece("Br", Field(0, 7), ""), Piece("Bk", Field(1, 7), ""), Piece("Bb", Field(2, 7), ""), Piece("Bq", Field(3, 7), ""), Piece("BK", Field(4, 7), ""), Piece("Wb", Field(5, 7), ""), Piece("Wk", Field(6, 7), ""), Piece("Br", Field(7, 7), "")}  // 7th row (Black pieces)
+    {Piece("Bp", Field(0, 6), "", 1), Piece("Bp", Field(1, 6), "", 1), Piece("Bp", Field(2, 6), "", 1), Piece("Bp", Field(3, 6), "", 1), Piece("Bp", Field(4, 6), "", 1), Piece("Bp", Field(5, 6), "", 1), Piece("Bp", Field(6, 6), "", 1), Piece("Bp", Field(7, 6), "", 1)}, // 6th row (Black pawns)
+    {Piece("Br", Field(0, 7), "", 5), Piece("Bk", Field(1, 7), "", 3), Piece("Bb", Field(2, 7), "", 3), Piece("Bq", Field(3, 7), "", 9), Piece("BK", Field(4, 7), "", 10), Piece("Bb", Field(5, 7), "", 3), Piece("Bk", Field(6, 7), "", 3), Piece("Br", Field(7, 7), "", 5)}  // 7th row (Black pieces)
 };
 
 // Representing an empty field
@@ -266,20 +278,27 @@ vector<Field> getValidMoves(Piece piece)
     {
         int moveDirection = piece.name[0] == 'W' ? 1 : -1;
         int boostRow = piece.name[0] == 'W' ? 1 : 6;
+        char opponent = turn % 2 == 0 ? 'B' : 'W';
         Piece pieceInFront = board[pieceRow + moveDirection][pieceCol];
         Piece pieceInFrontFront = board[pieceRow + moveDirection + moveDirection][pieceCol];
         bool aPieceInFront = pieceInFront.name != "00";
-        bool aPieceInFrontFront = pieceInFront.name != "00";
-        if (pieceRow + moveDirection <= 7 && pieceRow + moveDirection >= 0 && !aPieceInFront)
+        bool aPieceInFrontFront = pieceInFrontFront.name != "00";
+        if (pieceRow + moveDirection <= 7 && pieceRow + moveDirection >= 0)
         {
-            moves.push_back(Field(pieceCol, pieceRow + moveDirection));
-        }
-        if (pieceRow == boostRow)
-        {
-
-            if (pieceRow + moveDirection + moveDirection <= 7 && pieceRow + moveDirection + moveDirection >= 0 && !aPieceInFrontFront)
+            if(!aPieceInFront) {
+                moves.push_back(Field(pieceCol, pieceRow + moveDirection));
+            }
+            if (pieceRow == boostRow && !aPieceInFrontFront)
             {
                 moves.push_back(Field(pieceCol, pieceRow + moveDirection + moveDirection));
+            }
+
+            // check if able to attack dionaginal
+            if(board[pieceRow + moveDirection][pieceCol - 1].name[0] == opponent && pieceCol - 1 >= 0) {
+                moves.push_back(Field(pieceCol - 1, pieceRow + moveDirection));
+            }
+            if(board[pieceRow + moveDirection][pieceCol + 1].name[0] == opponent && pieceCol + 1 <= 7) {
+                moves.push_back(Field(pieceCol + 1, pieceRow + moveDirection));
             }
         }
 
@@ -291,6 +310,7 @@ vector<Field> getValidMoves(Piece piece)
             moves.push_back(move); 
 
         }
+        // Could remove moves which puts oneself in check here. Responsibility is given to validatemove for now. Good thing about that is we only check for a single move instead of running all moves through inCheckAfterMove
     }
 
     return moves;
@@ -409,6 +429,7 @@ bool validateMove(Field fieldOfMove, Piece piece)
     // Check if player is in check after the move, by doing it, then reverse back
     bool playerInCheckAfterMove = inCheckAfterMove(fieldOfMove, piece);
     if(playerInCheckAfterMove) {
+        cout << "The move puts you in check...\n";
         return false;
     }
 
@@ -517,8 +538,7 @@ bool movePiece(Piece piece)
     return false;
 }
 
-// Moves a random piece
-void computerMoveRandom() {
+vector<Piece> getOwnPiecesWhichCanMove() {
     char currentPlayer = turn % 2 == 0 ? 'W' : 'B';
     vector<Piece> possiblePieces;
     for (int row = 0; row < 8; ++row) {
@@ -526,7 +546,7 @@ void computerMoveRandom() {
             Piece piece = board[row][col];
             char player = piece.name[0];
             if(player != currentPlayer) {
-                break;
+                continue;
             }
             vector<Field> moves = getValidMoves(piece);
             if(moves.size() > 0) {
@@ -534,6 +554,11 @@ void computerMoveRandom() {
             }
         }
     }
+    return possiblePieces;
+}
+
+void computerMoveRandom() {
+    vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
     srand(time(0)); // seed for randomness
     int randomNum = rand() % possiblePieces.size();
     Piece randomPiece = possiblePieces[randomNum];
@@ -550,16 +575,51 @@ void computerMoveRandom() {
     }
 }
 
+void computerMoveCleverRandom() {
+    vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
+    map<Piece, Field> bestMoves;
+    int highestValuePiece = 0;
+    for(int i = 0; i < possiblePieces.size(); i++) {
+        Piece piece = possiblePieces[i];
+        vector<Field> validMoves = getValidMoves(piece);
+        for(int i = 0; i < validMoves.size(); i++) {
+            Field move = validMoves[i];
+            Piece attackedPiece = board[move.row][move.col];
+            if(attackedPiece.value > highestValuePiece) {
+                bestMoves.clear();
+                highestValuePiece = attackedPiece.value;
+            }
+            if(attackedPiece.value == highestValuePiece) {
+                bestMoves[piece] = move;
+            }
+        }
+    }
+    srand(time(0)); // seed for randomness
+    int randomNum = rand() % bestMoves.size();
+    map<Piece, Field>::iterator iterator = bestMoves.begin(); // Here we really should just use a Move struct instead of using a Map. 
+    advance(iterator, randomNum); // Iterate random steps into bestMoves
+    Piece randomPiece = iterator->first;
+    Field randomMove = iterator->second;
+    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
+    if(!moveSetsItselfInCheck) {
+        executeMove(randomMove, randomPiece);
+        turn++;
+        cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
+    } else {
+        computerMoveCleverRandom();
+    }
+}
+
 void computerMove() {
     switch (difficulty) {
         case 1:
         computerMoveRandom();
         break;
         case 2:
-        cout << "Not implemented lol";
+        computerMoveCleverRandom();
         break;
         case 3:
-        cout << "Not implemented lol";
+        cout << "Selected computermode is not implemented, lol";
         break;
     }
 }
@@ -598,6 +658,11 @@ int main()
     cout << "Welcome to the game of chess.\n";
     cout << "Press '1' for local game or '2' to play against computer: ";
     cin >> gamemode;
+    if(gamemode != 1 && gamemode != 2) {
+        cout << "Come on, please choose a valid gamemode. Now you have to start over.\n";
+        cout << "Game shutting down!\n";
+        gameinprocess = false;
+    }
     if(gamemode == 2) {
         cout << "Select computer difficulty:\n";
         cout << "1. Easy (random moves)\n";
@@ -605,6 +670,11 @@ int main()
         cout << "3. Hard (future)\n";
         cout << "Enter your choice (1-3): ";
         cin >> difficulty;
+        if(difficulty != 1 && difficulty != 2) {
+            cout << "Selected difficulty has not been implemented. Too bad.\n";
+            cout << "Game shutting down!\n";
+            gameinprocess = false;
+        }
     }
     while (gameinprocess)
     {
