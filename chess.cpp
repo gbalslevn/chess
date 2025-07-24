@@ -76,6 +76,10 @@ Piece board[8][8] = {
     {Piece("Br", Field(0, 7), "", 5), Piece("Bk", Field(1, 7), "", 3), Piece("Bb", Field(2, 7), "", 3), Piece("Bq", Field(3, 7), "", 9), Piece("BK", Field(4, 7), "", 10), Piece("Bb", Field(5, 7), "", 3), Piece("Bk", Field(6, 7), "", 3), Piece("Br", Field(7, 7), "", 5)}  // 7th row (Black pieces)
 };
 
+Piece (&getBoard())[8][8] {
+    return board;
+}
+
 // Representing an empty field
 Piece createEmptyPiece()
 {
@@ -524,6 +528,7 @@ void executeMove(Field moveToField, Piece piece)
     piece.field = moveToField;
     board[moveToField.row][moveToField.col] = piece;
     board[currentField.row][currentField.col] = createEmptyPiece();
+    turn++;
 }
 
 Piece selectPiece()
@@ -564,7 +569,6 @@ bool movePiece(Piece piece)
     if (validMove)
     {
         executeMove(fieldOfMove, piece);
-        turn++;
         return true;
     }
     cout << "Please retype move: \n";
@@ -609,7 +613,6 @@ void computerMoveRandom()
     if (!moveSetsItselfInCheck)
     {
         executeMove(randomMove, randomPiece);
-        turn++;
         cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
     }
     else
@@ -652,7 +655,6 @@ void computerMoveCleverRandom()
     if (!moveSetsItselfInCheck)
     {
         executeMove(randomMove, randomPiece);
-        turn++;
         cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
     }
     else

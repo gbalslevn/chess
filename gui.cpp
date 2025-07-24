@@ -11,28 +11,9 @@ uint PIECE_ADJUST_X = 8;
 uint PIECE_ADJUST_Y = 8;
 bool isDragging = false;
 sf::Vector2f dragOffset;
-
-struct Piece
-{
-    sf::Sprite sprite;
-    shared_ptr<sf::Texture> texture;
-    Piece(string texturePath, float row, float col)
-    {
-        texture = make_shared<sf::Texture>();
-        if (!texture->loadFromFile(texturePath))
-        {
-            cerr << "Error loading: " << texturePath << "\n";
-        }
-        else
-        {
-            cout << "Loaded texture correctly\n";
-        }
-        texture->setSmooth(true);
-        sprite.setTexture(*texture);
-        // sprite.setScale(sf::Vector2f(0.5f, 0.5f));
-        sprite.setPosition(sf::Vector2f(float(TILE_SIZE) * row, float(TILE_SIZE) * col));
-    }
-};
+sf::Vector2f draggedStartPos;
+sf::Sprite *draggedPiece = nullptr;
+vector<sf::Sprite> pieces;
 
 void drawBoard(sf::RenderWindow& window) {
     int boardSize = 10;
@@ -49,9 +30,6 @@ void drawBoard(sf::RenderWindow& window) {
         }
     }
 }
-
-sf::Sprite *draggedPiece = nullptr;
-vector<sf::Sprite> pieces;
 
 int startGui()
 {
@@ -80,9 +58,18 @@ int startGui()
                     {
                         if (pieces[i].getGlobalBounds().contains(mousePos))
                         {
-                            draggedPiece = &pieces[i];
-                            isDragging = true;
-                            dragOffset = mousePos - pieces[i].getPosition();
+                            sf::Vector2f pos = pieces[i].getPosition();
+                            int col = int((pos.x + TILE_SIZE / 2) / TILE_SIZE);
+                            int row = int((pos.y + TILE_SIZE / 2) / TILE_SIZE);
+                            bool validSelection = validateSelection(Field(col - 1, row - 1));
+                            if(validSelection) {
+                                draggedPiece = &pieces[i];
+                                isDragging = true;
+                                draggedStartPos = pieces[i].getPosition();
+                                dragOffset = mousePos - draggedStartPos;
+                            } else {
+                                cout << "Cannot select that piece\n";
+                            }
                         }
                     }
                 }
@@ -94,12 +81,31 @@ int startGui()
                     if (isDragging)
                     {
                         isDragging = false;
-
                         // Snap to nearest tile
                         sf::Vector2f pos = draggedPiece->getPosition();
                         int col = int((pos.x + TILE_SIZE / 2) / TILE_SIZE);
                         int row = int((pos.y + TILE_SIZE / 2) / TILE_SIZE);
-                        draggedPiece->setPosition(col * TILE_SIZE + PIECE_ADJUST_X, row * TILE_SIZE + PIECE_ADJUST_Y);
+                        int startCol = int((draggedStartPos.x + TILE_SIZE / 2) / TILE_SIZE);
+                        int startRow = int((draggedStartPos.y + TILE_SIZE / 2) / TILE_SIZE);
+                        Piece (&board)[8][8] = getBoard();
+                        Piece piece = board[startRow-1][startCol-1];
+                        cout << piece.name;
+                        Field moveTo = Field(col-1, row-1);
+                        bool isMoveValid = validateMove(moveTo, piece);
+                        if(isMoveValid) {
+                            executeMove(moveTo, piece);
+                            bool tookOpponentPiece = board[row-1][col-1].name[0] != piece.name[0] && board[row-1][col-1].name != "00";
+                            if(tookOpponentPiece) {
+                                // Remove opponent piece from board
+                            }
+                            bool enPassantCapture = false; // make a get to check perhaps? 
+                            if(enPassantCapture) {
+                                // Remove opponent piece from board
+                            }
+                            draggedPiece->setPosition(col * TILE_SIZE + PIECE_ADJUST_X, row * TILE_SIZE + PIECE_ADJUST_Y);
+                        } else {
+                            draggedPiece->setPosition(draggedStartPos);
+                        }
                     }
                 }
             }
@@ -109,18 +115,14 @@ int startGui()
                     sf::Vector2f mousePos(event.mouseMove.x, event.mouseMove.y);
                     draggedPiece->setPosition(mousePos - dragOffset);
                 }
-                cout << "new mouse x: " << event.mouseMove.x << endl;
-                cout << "new mouse y: " << event.mouseMove.y << endl;
             }
         }
-        window.clear(sf::Color::Blue);
+        window.clear(sf::Color::Black);
         drawBoard(window);
         for (int i = 0; i < pieces.size(); i++)
         {
             window.draw(pieces[i]);
         }
-        // window.draw(testPiece.sprite);
-        // window.draw(testPiece.sprite);
         window.display();
     }
     return 0;
