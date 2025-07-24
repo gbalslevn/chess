@@ -129,29 +129,77 @@ chess/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/build
 .PHONY : chess/fast
 
-main.o: main.cpp.o
-.PHONY : main.o
+PieceLoader.o: PieceLoader.cpp.o
+.PHONY : PieceLoader.o
 
 # target to build an object file
-main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/main.cpp.o
-.PHONY : main.cpp.o
+PieceLoader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/PieceLoader.cpp.o
+.PHONY : PieceLoader.cpp.o
 
-main.i: main.cpp.i
-.PHONY : main.i
+PieceLoader.i: PieceLoader.cpp.i
+.PHONY : PieceLoader.i
 
 # target to preprocess a source file
-main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/main.cpp.i
-.PHONY : main.cpp.i
+PieceLoader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/PieceLoader.cpp.i
+.PHONY : PieceLoader.cpp.i
 
-main.s: main.cpp.s
-.PHONY : main.s
+PieceLoader.s: PieceLoader.cpp.s
+.PHONY : PieceLoader.s
 
 # target to generate assembly for a file
-main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/main.cpp.s
-.PHONY : main.cpp.s
+PieceLoader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/PieceLoader.cpp.s
+.PHONY : PieceLoader.cpp.s
+
+chess.o: chess.cpp.o
+.PHONY : chess.o
+
+# target to build an object file
+chess.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/chess.cpp.o
+.PHONY : chess.cpp.o
+
+chess.i: chess.cpp.i
+.PHONY : chess.i
+
+# target to preprocess a source file
+chess.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/chess.cpp.i
+.PHONY : chess.cpp.i
+
+chess.s: chess.cpp.s
+.PHONY : chess.s
+
+# target to generate assembly for a file
+chess.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/chess.cpp.s
+.PHONY : chess.cpp.s
+
+gui.o: gui.cpp.o
+.PHONY : gui.o
+
+# target to build an object file
+gui.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/gui.cpp.o
+.PHONY : gui.cpp.o
+
+gui.i: gui.cpp.i
+.PHONY : gui.i
+
+# target to preprocess a source file
+gui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/gui.cpp.i
+.PHONY : gui.cpp.i
+
+gui.s: gui.cpp.s
+.PHONY : gui.s
+
+# target to generate assembly for a file
+gui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/chess.dir/build.make CMakeFiles/chess.dir/gui.cpp.s
+.PHONY : gui.cpp.s
 
 test.o: test.cpp.o
 .PHONY : test.o
@@ -186,9 +234,15 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... chess"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
+	@echo "... PieceLoader.o"
+	@echo "... PieceLoader.i"
+	@echo "... PieceLoader.s"
+	@echo "... chess.o"
+	@echo "... chess.i"
+	@echo "... chess.s"
+	@echo "... gui.o"
+	@echo "... gui.i"
+	@echo "... gui.s"
 	@echo "... test.o"
 	@echo "... test.i"
 	@echo "... test.s"

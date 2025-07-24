@@ -8,7 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/Users/gustavnielsen/Documents/Kode.nosync/chess/main.cpp" "CMakeFiles/chess.dir/main.cpp.o" "gcc" "CMakeFiles/chess.dir/main.cpp.o.d"
+  "/Users/gustavnielsen/Documents/Kode.nosync/chess/PieceLoader.cpp" "CMakeFiles/chess.dir/PieceLoader.cpp.o" "gcc" "CMakeFiles/chess.dir/PieceLoader.cpp.o.d"
+  "/Users/gustavnielsen/Documents/Kode.nosync/chess/chess.cpp" "CMakeFiles/chess.dir/chess.cpp.o" "gcc" "CMakeFiles/chess.dir/chess.cpp.o.d"
+  "/Users/gustavnielsen/Documents/Kode.nosync/chess/gui.cpp" "CMakeFiles/chess.dir/gui.cpp.o" "gcc" "CMakeFiles/chess.dir/gui.cpp.o.d"
   "/Users/gustavnielsen/Documents/Kode.nosync/chess/test.cpp" "CMakeFiles/chess.dir/test.cpp.o" "gcc" "CMakeFiles/chess.dir/test.cpp.o.d"
   )
 

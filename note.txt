@@ -1,0 +1,253 @@
+// sf::Texture wrt;
+    // if (!wrt.loadFromFile("images/white-rook.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // wrt.setSmooth(true);
+
+    // sf::Texture wkt;
+    // if (!wkt.loadFromFile("images/white-knight.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // wkt.setSmooth(true);
+
+    // sf::Texture wbt;
+    // if (!wbt.loadFromFile("images/white-bishop.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // wbt.setSmooth(true);
+
+    // sf::Texture wqt;
+    // if (!wqt.loadFromFile("images/white-queen.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // wqt.setSmooth(true);
+
+    // sf::Texture wKt;
+    // if (!wKt.loadFromFile("images/white-king.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // wKt.setSmooth(true);
+    
+    // sf::Texture wpt;
+    // if (!wpt.loadFromFile("images/white-pawn.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // wpt.setSmooth(true);
+
+    // // White rook 1
+    // sf::Sprite wr1;
+    // wr1.setTexture(wrt);
+    // wr1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wr1.setPosition(sf::Vector2f(float(TILE_SIZE) * 1, float(TILE_SIZE) * 1));
+    // pieces.push_back(wr1);
+    // // White rook 2
+    // sf::Sprite wr2;
+    // wr2.setTexture(wrt);
+    // wr2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wr2.setPosition(sf::Vector2f(float(TILE_SIZE) * 8, float(TILE_SIZE) * 1));
+    // pieces.push_back(wr2);
+    // // White knight 1
+    // sf::Sprite wk1;
+    // wk1.setTexture(wkt);
+    // wk1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wk1.setPosition(sf::Vector2f(float(TILE_SIZE) * 2, float(TILE_SIZE) * 1));
+    // pieces.push_back(wk1);
+    // // White knight 2
+    // sf::Sprite wk2;
+    // wk2.setTexture(wkt);
+    // wk2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wk2.setPosition(sf::Vector2f(float(TILE_SIZE) * 7, float(TILE_SIZE) * 1));
+    // pieces.push_back(wk2);
+    // // White bishop 1
+    // sf::Sprite wb1;
+    // wb1.setTexture(wbt);
+    // wb1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wb1.setPosition(sf::Vector2f(float(TILE_SIZE) * 3, float(TILE_SIZE) * 1));
+    // pieces.push_back(wb1);
+    // // White bishop 2
+    // sf::Sprite wb2;
+    // wb2.setTexture(wbt);
+    // wb2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wb2.setPosition(sf::Vector2f(float(TILE_SIZE) * 6, float(TILE_SIZE) * 1));
+    // pieces.push_back(wb2);
+    // // White king
+    // sf::Sprite wK;
+    // wK.setTexture(wKt);
+    // wK.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wK.setPosition(sf::Vector2f(float(TILE_SIZE) * 5, float(TILE_SIZE) * 1));
+    // pieces.push_back(wK);
+    // // White queen
+    // sf::Sprite wq;
+    // wq.setTexture(wqt);
+    // wq.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wq.setPosition(sf::Vector2f(float(TILE_SIZE) * 4, float(TILE_SIZE) * 1));
+    // pieces.push_back(wq);
+    // // White pawn 1
+    // sf::Sprite wp1;
+    // wp1.setTexture(wpt);
+    // wp1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp1.setPosition(sf::Vector2f(float(TILE_SIZE) * 1, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp1);
+    // // White pawn 2
+    // sf::Sprite wp2;
+    // wp2.setTexture(wpt);
+    // wp2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp2.setPosition(sf::Vector2f(float(TILE_SIZE) * 2, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp2);
+    // // White pawn 3
+    // sf::Sprite wp3;
+    // wp3.setTexture(wpt);
+    // wp3.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp3.setPosition(sf::Vector2f(float(TILE_SIZE) * 3, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp3);
+    // // White pawn 4
+    // sf::Sprite wp4;
+    // wp4.setTexture(wpt);
+    // wp4.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp4.setPosition(sf::Vector2f(float(TILE_SIZE) * 4, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp4);
+    // // White pawn 5
+    // sf::Sprite wp5;
+    // wp5.setTexture(wpt);
+    // wp5.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp5.setPosition(sf::Vector2f(float(TILE_SIZE) * 5, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp5);
+    // // White pawn 6
+    // sf::Sprite wp6;
+    // wp6.setTexture(wpt);
+    // wp6.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp6.setPosition(sf::Vector2f(float(TILE_SIZE) * 6, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp6);
+    // // White pawn 7
+    // sf::Sprite wp7;
+    // wp7.setTexture(wpt);
+    // wp7.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp7.setPosition(sf::Vector2f(float(TILE_SIZE) * 7, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp7);
+    // // White pawn 8
+    // sf::Sprite wp8;
+    // wp8.setTexture(wpt);
+    // wp8.setScale(sf::Vector2f(0.5f, 0.5f));
+    // wp8.setPosition(sf::Vector2f(float(TILE_SIZE) * 8, float(TILE_SIZE) * 2));
+    // pieces.push_back(wp8);
+
+    // sf::Texture brt;
+    // if (!brt.loadFromFile("images/black-rook.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // brt.setSmooth(true);
+
+    // sf::Texture bkt;
+    // if (!bkt.loadFromFile("images/black-knight.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // bkt.setSmooth(true);
+
+    // sf::Texture bbt;
+    // if (!bbt.loadFromFile("images/black-bishop.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // bbt.setSmooth(true);
+
+    // sf::Texture bqt;
+    // if (!bqt.loadFromFile("images/black-queen.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // bqt.setSmooth(true);
+
+    // sf::Texture bKt;
+    // if (!bKt.loadFromFile("images/black-king.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // bKt.setSmooth(true);
+    
+    // sf::Texture bpt;
+    // if (!bpt.loadFromFile("images/black-pawn.png"))
+    // cout << "Error loading: " << "texturePath" << "\n";
+    // bpt.setSmooth(true);
+
+    // // black rook 1
+    // sf::Sprite br1;
+    // br1.setTexture(brt);
+    // br1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // br1.setPosition(sf::Vector2f(float(TILE_SIZE) * 1, float(TILE_SIZE) * 8));
+    // pieces.push_back(br1);
+    // // black rook 2
+    // sf::Sprite br2;
+    // br2.setTexture(brt);
+    // br2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // br2.setPosition(sf::Vector2f(float(TILE_SIZE) * 8, float(TILE_SIZE) * 8));
+    // pieces.push_back(br2);
+    // // black knight 1
+    // sf::Sprite bk1;
+    // bk1.setTexture(bkt);
+    // bk1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bk1.setPosition(sf::Vector2f(float(TILE_SIZE) * 2, float(TILE_SIZE) * 8));
+    // pieces.push_back(bk1);
+    // // black knight 2
+    // sf::Sprite bk2;
+    // bk2.setTexture(bkt);
+    // bk2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bk2.setPosition(sf::Vector2f(float(TILE_SIZE) * 7, float(TILE_SIZE) * 8));
+    // pieces.push_back(bk2);
+    // // black bishop 1
+    // sf::Sprite bb1;
+    // bb1.setTexture(bbt);
+    // bb1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bb1.setPosition(sf::Vector2f(float(TILE_SIZE) * 3, float(TILE_SIZE) * 8));
+    // pieces.push_back(bb1);
+    // // black bishop 2
+    // sf::Sprite bb2;
+    // bb2.setTexture(bbt);
+    // bb2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bb2.setPosition(sf::Vector2f(float(TILE_SIZE) * 6, float(TILE_SIZE) * 8));
+    // pieces.push_back(bb2);
+    // // black king
+    // sf::Sprite bK;
+    // bK.setTexture(bKt);
+    // bK.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bK.setPosition(sf::Vector2f(float(TILE_SIZE) * 5, float(TILE_SIZE) * 8));
+    // pieces.push_back(bK);
+    // // black queen
+    // sf::Sprite bq;
+    // bq.setTexture(bqt);
+    // bq.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bq.setPosition(sf::Vector2f(float(TILE_SIZE) * 4, float(TILE_SIZE) * 8));
+    // pieces.push_back(bq);
+    // // black pabn 1
+    // sf::Sprite bp1;
+    // bp1.setTexture(bpt);
+    // bp1.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp1.setPosition(sf::Vector2f(float(TILE_SIZE) * 1, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp1);
+    // // black pabn 2
+    // sf::Sprite bp2;
+    // bp2.setTexture(bpt);
+    // bp2.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp2.setPosition(sf::Vector2f(float(TILE_SIZE) * 2, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp2);
+    // // black pabn 3
+    // sf::Sprite bp3;
+    // bp3.setTexture(bpt);
+    // bp3.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp3.setPosition(sf::Vector2f(float(TILE_SIZE) * 3, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp3);
+    // // black pabn 4
+    // sf::Sprite bp4;
+    // bp4.setTexture(bpt);
+    // bp4.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp4.setPosition(sf::Vector2f(float(TILE_SIZE) * 4, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp4);
+    // // black pabn 5
+    // sf::Sprite bp5;
+    // bp5.setTexture(bpt);
+    // bp5.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp5.setPosition(sf::Vector2f(float(TILE_SIZE) * 5, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp5);
+    // // black pabn 6
+    // sf::Sprite bp6;
+    // bp6.setTexture(bpt);
+    // bp6.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp6.setPosition(sf::Vector2f(float(TILE_SIZE) * 6, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp6);
+    // // black pabn 7
+    // sf::Sprite bp7;
+    // bp7.setTexture(bpt);
+    // bp7.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp7.setPosition(sf::Vector2f(float(TILE_SIZE) * 7, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp7);
+    // // black pabn 8
+    // sf::Sprite bp8;
+    // bp8.setTexture(bpt);
+    // bp8.setScale(sf::Vector2f(0.5f, 0.5f));
+    // bp8.setPosition(sf::Vector2f(float(TILE_SIZE) * 8, float(TILE_SIZE) * 7));
+    // pieces.push_back(bp8);

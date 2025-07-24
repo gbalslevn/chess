@@ -21,18 +21,14 @@ Machine uses alpha-beta pruning to disregard some branches of the tree and searc
 #### 5. IMPOSSIBLE
 Machine adds the factor of piece placement. Implemented using piece square tables.       
 
+GUI depends on the multimedia library [SFML](https://www.sfml-dev.org/). Which must be linked accordingly. I recommend configuring "CMakeLists.txt". 
 
+# Build and run 
+`make && ./chess` 
 ## Build natively
-Compile using `g++ -o chess main.cpp` and then run it with `./chess`
-
+Compile using `g++ -o chess main.cpp` + link to SFML  and then run it with `./chess`. 
 ## Build with cmake
-Build with `cmake --build .`
-
 Changes to build is configured in CMakeLists.txt. To apply changes do `cmake ./build`
-
-You can also combine the command to a single command `cmake ./build && cmake --build .`
-To also run it you can then do `cmake ./build && cmake --build . && ./chess`
-If no changes has been made to CMakeLists.txt simply run the program with `cmake --build . && ./chess`
 
 
 
