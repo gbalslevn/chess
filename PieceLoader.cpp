@@ -52,32 +52,32 @@ void PieceLoader::createSprites()
     };
 
     // White major pieces (row 1)
-    addPiece(0, 1, 1);
-    addPiece(0, 8, 1); // Rooks
-    addPiece(1, 2, 1);
-    addPiece(1, 7, 1); // Knights
-    addPiece(2, 3, 1);
-    addPiece(2, 6, 1); // Bishops
-    addPiece(3, 4, 1); // Queen
-    addPiece(4, 5, 1); // King
+    addPiece(0, 1, 8);
+    addPiece(0, 8, 8); // Rooks
+    addPiece(1, 2, 8);
+    addPiece(1, 7, 8); // Knights
+    addPiece(2, 3, 8);
+    addPiece(2, 6, 8); // Bishops
+    addPiece(3, 4, 8); // Queen
+    addPiece(4, 5, 8); // King
 
     // White pawns (row 2)
     for (int i = 1; i <= 8; ++i)
-        addPiece(5, i, 2);
+        addPiece(5, i, 7);
 
     // Black major pieces (row 8)
-    addPiece(6, 1, 8);
-    addPiece(6, 8, 8); // Rooks
-    addPiece(7, 2, 8);
-    addPiece(7, 7, 8); // Knights
-    addPiece(8, 3, 8);
-    addPiece(8, 6, 8);  // Bishops
-    addPiece(9, 4, 8);  // Queen
-    addPiece(10, 5, 8); // King
+    addPiece(6, 1, 1);
+    addPiece(6, 8, 1); // Rooks
+    addPiece(7, 2, 1);
+    addPiece(7, 7, 1); // Knights
+    addPiece(8, 3, 1);
+    addPiece(8, 6, 1);  // Bishops
+    addPiece(9, 4, 1);  // Queen
+    addPiece(10, 5, 1); // King
 
     // Black pawns (row 7)
     for (int i = 1; i <= 8; ++i)
-        addPiece(11, i, 7);
+        addPiece(11, i, 2);
 }
 
 vector<sf::Sprite> &PieceLoader::getPieces()

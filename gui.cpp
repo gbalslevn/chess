@@ -15,18 +15,57 @@ sf::Vector2f draggedStartPos;
 sf::Sprite *draggedPiece = nullptr;
 vector<sf::Sprite> pieces;
 
-void drawBoard(sf::RenderWindow& window) {
+sf::Font font;
+
+// Converts a position on the board to the col on the board
+int getCol(int posX)
+{
+    return int((posX + TILE_SIZE / 2) / TILE_SIZE) - 1;
+}
+
+// Converts a position on the board to the row on the board
+int getRow(int posY)
+{
+    return abs(8 - int((posY + TILE_SIZE / 2) / TILE_SIZE));
+}
+
+void drawBoard(sf::RenderWindow &window)
+{
     int boardSize = 10;
+    // Create label text
+    sf::Text label;
+    label.setFont(font);
+    label.setCharacterSize(18);
+    label.setFillColor(sf::Color::White);
     sf::RectangleShape tile(sf::Vector2f(TILE_SIZE, TILE_SIZE));
-    for (int row = 0; row < boardSize; ++row) {
-        for (int col = 0; col < boardSize; ++col) {
+    for (int row = boardSize; row > 0; --row)
+    {
+        for (int col = 0; col < boardSize; ++col)
+        {
             bool isWhite = (row + col) % 2 == 0;
             tile.setFillColor(isWhite ? sf::Color(240, 217, 181) : sf::Color(181, 136, 99));
             tile.setPosition(float(col * TILE_SIZE), float(row * TILE_SIZE));
-            if(col == 0 || col == boardSize-1 || row == 0 || row == boardSize-1) {
+            if (col == 0 || col == boardSize - 1 || row == 0 || row == boardSize - 1)
+            {
                 tile.setFillColor(sf::Color(0, 0, 10));
             }
             window.draw(tile);
+
+            // Draw column labels (a-h)
+            if ((row == boardSize - 1) && col > 0 && col < 9)
+            {
+                label.setString(string(1, 'a' + col - 1));
+                label.setPosition(col * TILE_SIZE + 32, row * TILE_SIZE + 16);
+                window.draw(label);
+            }
+
+            // Draw row labels (1-8)
+            if (col == 0 && row > 0 && row < 9)
+            {
+                label.setString(to_string(9 - row));
+                label.setPosition(col * TILE_SIZE + 32, row * TILE_SIZE + 32);
+                window.draw(label);
+            }
         }
     }
 }
@@ -35,8 +74,12 @@ int startGui()
 {
     sf::RenderWindow window(sf::VideoMode(800, 800), "Chess");
 
-    PieceLoader loader(TILE_SIZE, PIECE_ADJUST_X, PIECE_ADJUST_Y); 
+    PieceLoader loader(TILE_SIZE, PIECE_ADJUST_X, PIECE_ADJUST_Y);
     vector<sf::Sprite> &pieces = loader.getPieces();
+    if (!font.loadFromFile("images/font.ttf"))
+    {
+        // Handle error
+    }
 
     // run the program as long as the window is open
     while (window.isOpen())
@@ -59,15 +102,19 @@ int startGui()
                         if (pieces[i].getGlobalBounds().contains(mousePos))
                         {
                             sf::Vector2f pos = pieces[i].getPosition();
-                            int col = int((pos.x + TILE_SIZE / 2) / TILE_SIZE);
-                            int row = int((pos.y + TILE_SIZE / 2) / TILE_SIZE);
-                            bool validSelection = validateSelection(Field(col - 1, row - 1));
-                            if(validSelection) {
+                            int col = getCol(pos.x);
+                            int row = getRow(pos.y);
+                            cout << "Col: " << col << " Row: " << row << "\n";
+                            bool validSelection = validateSelection(Field(col, row));
+                            if (validSelection)
+                            {
                                 draggedPiece = &pieces[i];
                                 isDragging = true;
                                 draggedStartPos = pieces[i].getPosition();
                                 dragOffset = mousePos - draggedStartPos;
-                            } else {
+                            }
+                            else
+                            {
                                 cout << "Cannot select that piece\n";
                             }
                         }
@@ -83,27 +130,42 @@ int startGui()
                         isDragging = false;
                         // Snap to nearest tile
                         sf::Vector2f pos = draggedPiece->getPosition();
-                        int col = int((pos.x + TILE_SIZE / 2) / TILE_SIZE);
-                        int row = int((pos.y + TILE_SIZE / 2) / TILE_SIZE);
-                        int startCol = int((draggedStartPos.x + TILE_SIZE / 2) / TILE_SIZE);
-                        int startRow = int((draggedStartPos.y + TILE_SIZE / 2) / TILE_SIZE);
-                        Piece (&board)[8][8] = getBoard();
-                        Piece piece = board[startRow-1][startCol-1];
-                        cout << piece.name;
-                        Field moveTo = Field(col-1, row-1);
+                        int col = getCol(pos.x);
+                        int row = getRow(pos.y);
+                        int startCol = getCol(draggedStartPos.x);
+                        int startRow = getRow(draggedStartPos.y);
+                        Piece(&board)[8][8] = getBoard();
+                        Piece &piece = board[startRow][startCol];
+                        Field moveTo = Field(col, row);
                         bool isMoveValid = validateMove(moveTo, piece);
-                        if(isMoveValid) {
+                        if (isMoveValid)
+                        {
+                            sf::Vector2f mousePos(event.mouseButton.x, event.mouseButton.y);
+                            Piece pieceTaken = board[row][col];
+                            bool tookOpponentPiece = pieceTaken.name[0] != piece.name[0] && pieceTaken.name != "00";
+                            if (tookOpponentPiece)
+                            {
+                                for (int i = 0; i < pieces.size(); i++)
+                                {
+                                    if ((pieces[i].getGlobalBounds().contains(mousePos)) && (&pieces[i] != draggedPiece)) 
+                                    {
+                                        pieces.erase(pieces.begin() + i);
+                                    }
+                                }
+                            }
+                            bool enPassantCapture = false; // make a get to check this?
+                            if (enPassantCapture)
+                            {
+                                // Remove opponent piece from board
+                            }
+                            // printBoard();
                             executeMove(moveTo, piece);
-                            bool tookOpponentPiece = board[row-1][col-1].name[0] != piece.name[0] && board[row-1][col-1].name != "00";
-                            if(tookOpponentPiece) {
-                                // Remove opponent piece from board
-                            }
-                            bool enPassantCapture = false; // make a get to check perhaps? 
-                            if(enPassantCapture) {
-                                // Remove opponent piece from board
-                            }
-                            draggedPiece->setPosition(col * TILE_SIZE + PIECE_ADJUST_X, row * TILE_SIZE + PIECE_ADJUST_Y);
-                        } else {
+                            // printBoard();
+
+                            draggedPiece->setPosition((col + 1) * TILE_SIZE + PIECE_ADJUST_X, abs(row - 8) * TILE_SIZE + PIECE_ADJUST_Y);
+                        }
+                        else
+                        {
                             draggedPiece->setPosition(draggedStartPos);
                         }
                     }
@@ -111,7 +173,8 @@ int startGui()
             }
             if (event.type == sf::Event::MouseMoved)
             {
-                if(isDragging) {
+                if (isDragging)
+                {
                     sf::Vector2f mousePos(event.mouseMove.x, event.mouseMove.y);
                     draggedPiece->setPosition(mousePos - dragOffset);
                 }
@@ -128,10 +191,14 @@ int startGui()
     return 0;
 }
 
-int main() {
-    if(false) {
+int main()
+{
+    if (false)
+    {
         startConsole();
-    } else {
+    }
+    else
+    {
         startGui();
     }
     return 0;

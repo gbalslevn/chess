@@ -23,5 +23,6 @@ void startConsole();
 bool validateSelection(Field field);
 bool validateMove(Field fieldOfMove, Piece piece);
 void executeMove(Field moveToField, Piece piece);
+void printBoard();
 
 #endif

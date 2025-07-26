@@ -369,13 +369,13 @@ void checkEnPassant(Piece piece)
 }
 
 // Checks if the opponent is checked by the provided piece
-bool pieceHasCheck(Piece piece)
+bool pieceHasCheck(Piece piece, Piece boardState[8][8])
 {
     vector<Field> moves = getValidMoves(piece);
     string opponentKing = piece.name[0] == 'W' ? "BK" : "WK";
     for (size_t i = 0; i < moves.size(); ++i)
     {
-        if (board[moves[i].row][moves[i].col].name == opponentKing)
+        if (boardState[moves[i].row][moves[i].col].name == opponentKing)
         {
             return true;
         }
@@ -383,19 +383,19 @@ bool pieceHasCheck(Piece piece)
     return false;
 }
 
-bool currentPlayerIsChecked()
+bool currentPlayerIsChecked(Piece boardCopy[8][8])
 {
     char currentPlayer = turn % 2 == 0 ? 'W' : 'B';
     for (int row = 0; row < 8; ++row)
     {
         for (int col = 0; col < 8; ++col)
         {
-            char player = board[row][col].name[0];
+            char player = boardCopy[row][col].name[0];
             if (player == currentPlayer)
             {
-                break;
+                continue;;
             }
-            bool pieceIsChecking = pieceHasCheck(board[row][col]);
+            bool pieceIsChecking = pieceHasCheck(boardCopy[row][col], boardCopy);
             if (pieceIsChecking)
             {
                 return true;
@@ -412,20 +412,15 @@ bool inCheckAfterMove(Field moveToField, Piece piece)
     bool inCheck = false;
     int moveToRow = moveToField.row;
     int moveToCol = moveToField.col;
-    Piece removedPiece = board[moveToRow][moveToCol];
-    Field currentField = piece.field;
+    Piece boardCopy[8][8];
+    memcpy(boardCopy, board, sizeof(board));
+    boardCopy[moveToRow][moveToCol] = piece;
+    boardCopy[piece.field.row][piece.field.col] = createEmptyPiece();
     piece.field = moveToField;
-    board[moveToRow][moveToCol] = piece;
-    board[piece.field.row][piece.field.col] = createEmptyPiece();
-    if (currentPlayerIsChecked())
+    if (currentPlayerIsChecked(boardCopy))
     {
-        cout << "You cannot make that move. You are in check.\n";
-        // Move back
-        board[moveToRow][moveToCol] = removedPiece;
-        board[currentField.row][currentField.col] = piece;
         inCheck = true;
     }
-
     return inCheck;
 }
 
