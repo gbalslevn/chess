@@ -141,7 +141,7 @@ bool validateInput(Field field)
 }
 
 // General method for calculating valid moves which are not weird, so not for the pawn or knight
-vector<Field> calculateMoves(vector<Field> moves, Piece piece, bool onestep, bool diagonal, bool cardinal)
+vector<Field> calculateMoves(vector<Field> moves, Piece piece, bool onestep, bool diagonal, bool cardinal, Piece boardState[8][8])
 {
     int direction[8][2] = {
         // {col, row}
@@ -172,7 +172,7 @@ vector<Field> calculateMoves(vector<Field> moves, Piece piece, bool onestep, boo
             {
                 break;
             }
-            Piece pieceOnCurrentField = board[currentRow][currentCol];
+            Piece pieceOnCurrentField = boardState[currentRow][currentCol];
             if (pieceOnCurrentField.name != "00")
             {
                 if (piece.name[0] == 'W' && pieceOnCurrentField.name[0] == 'B' || piece.name[0] == 'B' && pieceOnCurrentField.name[0] == 'W')
@@ -214,7 +214,7 @@ bool pieceInTheWay(int direction, int steps)
 }
 
 // Returns valid moves for the piece.
-vector<Field> getValidMoves(Piece piece)
+vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
 {
     vector<Field> moves;
     int pieceCol = piece.field.col;
@@ -223,7 +223,7 @@ vector<Field> getValidMoves(Piece piece)
 
     if (pieceType == 'r') // rook
     {
-        moves = calculateMoves(moves, piece, false, false, true);
+        moves = calculateMoves(moves, piece, false, false, true, boardState);
         // Check for castling
     }
     if (pieceType == 'k') // knight
@@ -243,7 +243,7 @@ vector<Field> getValidMoves(Piece piece)
         {
             int col = pieceCol + direction[i][0];
             int row = pieceRow + direction[i][1];
-            bool ownPieceBlocks = piece.name[0] == 'W' ? board[row][col].name[0] == 'W' : board[row][col].name[0] == 'B';
+            bool ownPieceBlocks = piece.name[0] == 'W' ? boardState[row][col].name[0] == 'W' : boardState[row][col].name[0] == 'B';
             if (col >= 0 && col <= 7 && row >= 0 && row <= 7 && !ownPieceBlocks)
             {
                 moves.push_back(Field(col, row));
@@ -252,11 +252,11 @@ vector<Field> getValidMoves(Piece piece)
     }
     if (pieceType == 'b') // bishop
     {
-        moves = calculateMoves(moves, piece, false, true, false);
+        moves = calculateMoves(moves, piece, false, true, false, boardState);
     }
     if (pieceType == 'K') // king
     {
-        moves = calculateMoves(moves, piece, true, true, true);
+        moves = calculateMoves(moves, piece, true, true, true, boardState);
         // Check for castling
         bool canCastle = piece.name[0] == 'W' ? whiteCanCastle : blackCanCastle;
 
@@ -281,15 +281,15 @@ vector<Field> getValidMoves(Piece piece)
     }
     if (pieceType == 'q') // queen
     {
-        moves = calculateMoves(moves, piece, false, true, true);
+        moves = calculateMoves(moves, piece, false, true, true, boardState);
     }
     if (pieceType == 'p') // Pawn
     {
         int moveDirection = piece.name[0] == 'W' ? 1 : -1;
         int boostRow = piece.name[0] == 'W' ? 1 : 6;
         char opponent = turn % 2 == 0 ? 'B' : 'W';
-        Piece pieceInFront = board[pieceRow + moveDirection][pieceCol];
-        Piece pieceInFrontFront = board[pieceRow + moveDirection + moveDirection][pieceCol];
+        Piece pieceInFront = boardState[pieceRow + moveDirection][pieceCol];
+        Piece pieceInFrontFront = boardState[pieceRow + moveDirection + moveDirection][pieceCol];
         bool aPieceInFront = pieceInFront.name != "00";
         bool aPieceInFrontFront = pieceInFrontFront.name != "00";
         if (pieceRow + moveDirection <= 7 && pieceRow + moveDirection >= 0)
@@ -304,11 +304,11 @@ vector<Field> getValidMoves(Piece piece)
             }
 
             // check if able to attack dionaginal
-            if (board[pieceRow + moveDirection][pieceCol - 1].name[0] == opponent && pieceCol - 1 >= 0)
+            if (boardState[pieceRow + moveDirection][pieceCol - 1].name[0] == opponent && pieceCol - 1 >= 0)
             {
                 moves.push_back(Field(pieceCol - 1, pieceRow + moveDirection));
             }
-            if (board[pieceRow + moveDirection][pieceCol + 1].name[0] == opponent && pieceCol + 1 <= 7)
+            if (boardState[pieceRow + moveDirection][pieceCol + 1].name[0] == opponent && pieceCol + 1 <= 7)
             {
                 moves.push_back(Field(pieceCol + 1, pieceRow + moveDirection));
             }
@@ -325,6 +325,11 @@ vector<Field> getValidMoves(Piece piece)
     }
 
     return moves;
+}
+
+// Get valid moves for global board
+vector<Field> getValidMoves(Piece piece) {
+    return getValidMoves(piece, board);
 }
 
 bool validateSelection(Field field)
@@ -371,7 +376,8 @@ void checkEnPassant(Piece piece)
 // Checks if the opponent is checked by the provided piece
 bool pieceHasCheck(Piece piece, Piece boardState[8][8])
 {
-    vector<Field> moves = getValidMoves(piece);
+
+    vector<Field> moves = getValidMoves(piece, boardState);
     string opponentKing = piece.name[0] == 'W' ? "BK" : "WK";
     for (size_t i = 0; i < moves.size(); ++i)
     {

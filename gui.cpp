@@ -104,7 +104,6 @@ int startGui()
                             sf::Vector2f pos = pieces[i].getPosition();
                             int col = getCol(pos.x);
                             int row = getRow(pos.y);
-                            cout << "Col: " << col << " Row: " << row << "\n";
                             bool validSelection = validateSelection(Field(col, row));
                             if (validSelection)
                             {
@@ -112,10 +111,6 @@ int startGui()
                                 isDragging = true;
                                 draggedStartPos = pieces[i].getPosition();
                                 dragOffset = mousePos - draggedStartPos;
-                            }
-                            else
-                            {
-                                cout << "Cannot select that piece\n";
                             }
                         }
                     }
@@ -149,7 +144,9 @@ int startGui()
                                 {
                                     if ((pieces[i].getGlobalBounds().contains(mousePos)) && (&pieces[i] != draggedPiece)) 
                                     {
-                                        pieces.erase(pieces.begin() + i);
+                                        pieces[i].setColor(sf::Color(255, 255, 255, 0)); // Removing from vector created weird bugs
+                                        pieces[i].setPosition(0,0);
+                                        break;
                                     }
                                 }
                             }
@@ -158,9 +155,7 @@ int startGui()
                             {
                                 // Remove opponent piece from board
                             }
-                            // printBoard();
                             executeMove(moveTo, piece);
-                            // printBoard();
 
                             draggedPiece->setPosition((col + 1) * TILE_SIZE + PIECE_ADJUST_X, abs(row - 8) * TILE_SIZE + PIECE_ADJUST_Y);
                         }
