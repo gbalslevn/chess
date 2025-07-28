@@ -91,7 +91,6 @@ Piece createEmptyPiece()
 }
 
 Piece enPassantPiece; // Store the latest piece which has been done an en passant
-Field enPassantMove;
 bool whiteCanCastle = true;
 bool whiteRookOnHHasMoved = false; // This should be as note on the piece in the future if board contains Piece objects instead of strings
 bool whiteRookOnAHasMoved = false;
@@ -321,9 +320,7 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
         // Check if there is a valid en passant move
         if (enPassantPiece.note == "enPassant" + to_string(turn - 1))
         {
-            cout << "EnPassant\n";
             Field move = Field(enPassantPiece.field.col, enPassantPiece.field.row + moveDirection);
-            enPassantMove = move;
             moves.push_back(move);
         }
         // Could remove moves which puts oneself in check here. Responsibility is given to validatemove for now. Good thing about that is we only check for a single move instead of running all moves through inCheckAfterMove
@@ -365,15 +362,17 @@ bool validateSelection(Field field)
     return true;
 }
 
-// Check if pawn did en passant and adds it as an en passant target if so
+// Check if pawn does an en passant after a double step. Adds it as an en passant target if so
 void checkEnPassant(Piece piece)
 {
     string opponent = turn % 2 == 0 ? "B" : "W";
-    bool movedNextToAPawn = piece.field.col - 1 > 0 && board[piece.field.row][piece.field.col - 1].name == opponent + "p" || piece.field.col + 1 < 7 && board[piece.field.row][piece.field.col + 1].name == opponent + "p";
+    int direction = turn % 2 == 0 ? 2 : -2;
+    bool movedNextToAPawn = piece.field.col - 1 >= 0 && board[piece.field.row + direction][piece.field.col - 1].name == opponent + "p" || piece.field.col + 1 <= 7 && board[piece.field.row][piece.field.col + 1].name == opponent + "p";
     if (movedNextToAPawn)
     {
         piece.note = "enPassant" + to_string(turn);
         enPassantPiece = piece;
+        enPassantPiece.field = Field(piece.field.col, piece.field.row + direction);
         cout << "en passant...\n";
     }
 }
@@ -521,9 +520,10 @@ void executeMove(Field moveToField, Piece piece)
         bool twoStepMove = abs(moveToField.row - piece.field.row) - 2 == 0; // maybe combine this into the checkEnPassant method
         if (twoStepMove)
         {
-            checkEnPassant(attackedPiece);
+            checkEnPassant(piece);
         }
-        if (moveToField == enPassantMove)
+        int direction = turn % 2 == 0 ? 1 : -1;  
+        if (moveToField == Field(enPassantPiece.field.col, enPassantPiece.field.row + direction))
         {
             // Take the piece behind the en passant move
             board[enPassantPiece.field.row][enPassantPiece.field.col] = createEmptyPiece();

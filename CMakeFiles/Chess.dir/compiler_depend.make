@@ -425,6 +425,7 @@ CMakeFiles/chess.dir/PieceLoader.cpp.o: PieceLoader.cpp \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include/stddef.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include/stdint.h \
   PieceLoader.h \
+  chess.h \
   /opt/homebrew/opt/sfml@2/include/SFML/Config.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics/BlendMode.hpp \
@@ -1854,8 +1855,6 @@ CMakeFiles/chess.dir/test.cpp.o: test.cpp \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include/stdint.h
 
 
-chess.h:
-
 gui.cpp:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.1.sdk/usr/include/math.h:
@@ -1949,6 +1948,8 @@ chess.cpp:
 /opt/homebrew/opt/sfml@2/include/SFML/Graphics/BlendMode.hpp:
 
 /opt/homebrew/opt/sfml@2/include/SFML/Config.hpp:
+
+chess.h:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/14.0.0/include/stdint.h:
 
