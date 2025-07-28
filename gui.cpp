@@ -88,6 +88,11 @@ int startGui()
         sf::Event event;
         while (window.pollEvent(event))
         {
+            // if(getTurn() % 2 != 0) {
+            //     computerMove();
+            //     loader.refreshSpritesFromBoard(getBoard());
+            // }
+
             if (event.type == sf::Event::Closed)
             {
                 window.close();
@@ -135,29 +140,9 @@ int startGui()
                         bool isMoveValid = validateMove(moveTo, piece);
                         if (isMoveValid)
                         {
-                            sf::Vector2f mousePos(event.mouseButton.x, event.mouseButton.y);
-                            Piece pieceTaken = board[row][col];
-                            bool tookOpponentPiece = pieceTaken.name[0] != piece.name[0] && pieceTaken.name != "00";
-                            if (tookOpponentPiece)
-                            {
-                                for (int i = 0; i < pieces.size(); i++)
-                                {
-                                    if ((pieces[i].getGlobalBounds().contains(mousePos)) && (&pieces[i] != draggedPiece)) 
-                                    {
-                                        pieces[i].setColor(sf::Color(255, 255, 255, 0)); // Removing from vector created weird bugs
-                                        pieces[i].setPosition(0,0);
-                                        break;
-                                    }
-                                }
-                            }
-                            bool enPassantCapture = false; // make a get to check this?
-                            if (enPassantCapture)
-                            {
-                                // Remove opponent piece from board
-                            }
                             executeMove(moveTo, piece);
-
-                            draggedPiece->setPosition((col + 1) * TILE_SIZE + PIECE_ADJUST_X, abs(row - 8) * TILE_SIZE + PIECE_ADJUST_Y);
+                            loader.refreshSpritesFromBoard(getBoard());
+                            // draggedPiece->setPosition((col + 1) * TILE_SIZE + PIECE_ADJUST_X, abs(row - 8) * TILE_SIZE + PIECE_ADJUST_Y);
                         }
                         else
                         {

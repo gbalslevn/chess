@@ -3,7 +3,7 @@
 using namespace std;
 
 // This class is neccesary for mainting the textures and not destroying them. Each piece needs to be loaded individually and each texture needs to be stored in its own variable to not be destroyed.
-// A better solution might exist, but from my trials i found this solution to be neccesary. 
+// A better solution might exist, but from my trials i found this solution to be neccesary.
 
 PieceLoader::PieceLoader(int tileSize, int pieceAdjustX, int pieceAdjustY) : TILE_SIZE(tileSize), PIECE_ADJUST_X(pieceAdjustX), PIECE_ADJUST_Y(pieceAdjustY)
 {
@@ -40,17 +40,17 @@ void PieceLoader::loadTextures()
     }
 }
 
+void PieceLoader::addPiece(int texIndex, int col, int row)
+{
+    sf::Sprite sprite;
+    sprite.setTexture(textures[texIndex]);
+    sprite.setScale(0.5f, 0.5f);
+    sprite.setPosition(float(TILE_SIZE) * col + PIECE_ADJUST_X, float(TILE_SIZE) * row + PIECE_ADJUST_Y);
+    pieces.push_back(sprite);
+};
+
 void PieceLoader::createSprites()
 {
-    auto addPiece = [&](int texIndex, int col, int row)
-    {
-        sf::Sprite sprite;
-        sprite.setTexture(textures[texIndex]);
-        sprite.setScale(0.5f, 0.5f);
-        sprite.setPosition(float(TILE_SIZE) * col + PIECE_ADJUST_X, float(TILE_SIZE) * row + PIECE_ADJUST_Y);
-        pieces.push_back(sprite);
-    };
-
     // White major pieces (row 1)
     addPiece(0, 1, 8);
     addPiece(0, 8, 8); // Rooks
@@ -78,6 +78,59 @@ void PieceLoader::createSprites()
     // Black pawns (row 7)
     for (int i = 1; i <= 8; ++i)
         addPiece(11, i, 2);
+}
+
+int PieceLoader::getTextureIndex(string name)
+{
+    if (name == "Wr")
+        return 0;
+    if (name == "Wk")
+        return 1;
+    if (name == "Wb")
+        return 2;
+    if (name == "Wq")
+        return 3;
+    if (name == "WK")
+        return 4;
+    if (name == "Wp")
+        return 5;
+    if (name == "Br")
+        return 6;
+    if (name == "Bk")
+        return 7;
+    if (name == "Bb")
+        return 8;
+    if (name == "Bq")
+        return 9;
+    if (name == "BK")
+        return 10;
+    if (name == "Bp")
+        return 11;
+    return -1;
+}
+
+void PieceLoader::refreshSpritesFromBoard(Piece board[8][8])
+{
+    pieces.clear(); // Clear existing sprites
+    for (int row = 0; row < 8; ++row)
+    {
+        for (int col = 0; col < 8; ++col)
+        {
+            const Piece &piece = board[row][col]; // access like board[x][y]
+            if (piece.name.empty())
+                continue;
+
+            int texIndex = getTextureIndex(piece.name);
+
+            if (texIndex != -1)
+            {
+                // Convert 0-based (col,row) to 1-based system (1-8)
+                int spriteCol = col + 1;
+                int spriteRow = 8 - row; // 8 - row becuae of how pieces are placed in my implementation
+                addPiece(texIndex, spriteCol, spriteRow);
+            }
+        }
+    }
 }
 
 vector<sf::Sprite> &PieceLoader::getPieces()

@@ -1,5 +1,6 @@
 #ifndef CHESS_H
 #define CHESS_H
+#include <string>
 using namespace std;
 
 struct Field {
@@ -24,5 +25,7 @@ bool validateSelection(Field field);
 bool validateMove(Field fieldOfMove, Piece piece);
 void executeMove(Field moveToField, Piece piece);
 void printBoard();
+int getTurn();
+void computerMove();
 
 #endif

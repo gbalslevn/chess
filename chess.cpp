@@ -12,7 +12,7 @@ using namespace std;
 bool gameinprocess = true;
 int turn = 0;
 int gamemode = 1; // Defaults to local game
-int difficulty = 1;
+int difficulty = 2;
 
 struct Field
 {
@@ -78,6 +78,10 @@ Piece board[8][8] = {
 
 Piece (&getBoard())[8][8] {
     return board;
+}
+
+int getTurn() {
+    return turn;
 }
 
 // Representing an empty field
@@ -317,6 +321,7 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
         // Check if there is a valid en passant move
         if (enPassantPiece.note == "enPassant" + to_string(turn - 1))
         {
+            cout << "EnPassant\n";
             Field move = Field(enPassantPiece.field.col, enPassantPiece.field.row + moveDirection);
             enPassantMove = move;
             moves.push_back(move);
