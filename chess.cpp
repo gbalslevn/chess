@@ -355,7 +355,7 @@ bool validateSelection(Field field)
     vector<Field> validMoves = getValidMoves(piece);
     if (validMoves.size() == 0)
     {
-        cout << field << " does not have any valid moves. Please select another piece. \n"; // - 'a' and - '0' to get correct ASCII representation
+        cout << piece.name << " on " << field << " does not have any valid moves. Please select another piece. \n"; // - 'a' and - '0' to get correct ASCII representation
         return false;
         // Perhaps check for stalemate here
     }
@@ -487,19 +487,22 @@ void executeMove(Field moveToField, Piece piece)
             blackCanCastle = false;
         }
         bool moveWasCastle = abs(piece.field.col - moveToField.col) == 2;
-        string rookName = turn % 2 == 0 ? "Wr" : "Br";
         if (moveWasCastle)
         {
             // Move the rook
             if (piece.field.col - moveToField.col < 0)
             { // Kingside
-                board[piece.field.row][piece.field.col + 1].name = rookName;
-                board[piece.field.row][7].name = "00";
+                Piece rook = board[piece.field.row][7];
+                rook.field = Field(piece.field.col + 1, piece.field.row);
+                board[piece.field.row][piece.field.col + 1] = rook;
+                board[piece.field.row][7] = createEmptyPiece();
             }
             else
             { // Queenside
-                board[piece.field.row][piece.field.col - 1].name = rookName;
-                board[piece.field.row][0].name = "00";
+                Piece rook = board[piece.field.row][0];
+                rook.field = Field(piece.field.col -1, piece.field.row);
+                board[piece.field.row][piece.field.col - 1] = board[piece.field.row][0];
+                board[piece.field.row][0] = createEmptyPiece();
             }
         }
     }

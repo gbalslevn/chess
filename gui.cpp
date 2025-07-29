@@ -88,10 +88,10 @@ int startGui()
         sf::Event event;
         while (window.pollEvent(event))
         {
-            // if(getTurn() % 2 != 0) {
-            //     computerMove();
-            //     loader.refreshSpritesFromBoard(getBoard());
-            // }
+            if(getTurn() % 2 != 0) {
+                computerMove();
+                loader.refreshSpritesFromBoard(getBoard());
+            }
 
             if (event.type == sf::Event::Closed)
             {
