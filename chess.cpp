@@ -501,7 +501,7 @@ void executeMove(Field moveToField, Piece piece)
             { // Queenside
                 Piece rook = board[piece.field.row][0];
                 rook.field = Field(piece.field.col -1, piece.field.row);
-                board[piece.field.row][piece.field.col - 1] = board[piece.field.row][0];
+                board[piece.field.row][piece.field.col - 1] = rook;
                 board[piece.field.row][0] = createEmptyPiece();
             }
         }
