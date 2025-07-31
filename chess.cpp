@@ -226,7 +226,7 @@ bool pieceInTheWay(int direction, int steps)
 bool inCheckAfterMove(Field moveToField, Piece piece);
 
 // Returns valid moves for the piece.
-vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTurn, bool checkForCheck)
+vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
     vector<Field> moves;
     int pieceCol = piece.field.col;
@@ -335,18 +335,6 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTu
             Field move = Field(enPassantPiece.field.col, enPassantPiece.field.row + moveDirection);
             moves.push_back(move);
         }
-        // Could remove moves which puts oneself in check here. Responsibility is given to validatemove for now. Good thing about that is we only check for a single move instead of running all moves through inCheckAfterMove
-    }
-
-    if (checkForCheck)
-    {
-        for (int i = moves.size() - 1; i >= 0; i--)
-        {
-            if (inCheckAfterMove(moves[i], piece))
-            {
-                moves.erase(moves.begin() + i);
-            }
-        }
     }
     return moves;
 }
@@ -354,7 +342,7 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTu
 // Get valid moves for global board
 vector<Field> getValidMoves(Piece piece)
 {
-    return getValidMoves(piece, board, (turn % 2 == 0), true);
+    return getValidMoves(piece, board, (turn % 2 == 0));
 }
 
 bool validateSelection(Field field)
@@ -380,7 +368,6 @@ bool validateSelection(Field field)
     {
         cout << piece.name << " on " << field << " does not have any valid moves. Please select another piece. \n"; // - 'a' and - '0' to get correct ASCII representation
         return false;
-        // Perhaps check for stalemate here
     }
     return true;
 }
@@ -420,7 +407,7 @@ Piece getKing(bool white)
 bool pieceHasCheck(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
 
-    vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn, false);
+    vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
     string opponentKing = piece.name[0] == 'W' ? "BK" : "WK";
     for (size_t i = 0; i < moves.size(); ++i)
     {
@@ -577,7 +564,7 @@ void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool is
     {
         turn++;
         vector<Field> moves = getValidMoves(getKing((turn % 2 == 0)));
-        if (moves.size() == 0 && currentPlayerIsChecked(board, turn % 2 == 0))
+        if (moves.size() == 0 && currentPlayerIsChecked(board, turn % 2 == 0)) // THIS IMPL DOES NOT WORK. CHECKED POSITIONS IS PART OF getValidMOves. ALSO, ANOTHER PIECE MIGHT ENSURE THERE IS NO CHECKMATE.  NEED TO CHECK ANOTHER WAY
         {
             gameinprocess = false;
         }
@@ -648,7 +635,7 @@ vector<Piece> getOwnPiecesWhichCanMove(Piece boardState[8][8], bool isWhitesTurn
             {
                 continue;
             }
-            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn, true);
+            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
             if (moves.size() > 0)
             {
                 possiblePieces.push_back(piece);
@@ -663,6 +650,34 @@ vector<Piece> getOwnPiecesWhichCanMove()
     return getOwnPiecesWhichCanMove(board, (turn % 2 == 0));
 }
 
+void executeRandomMove(map<Piece, Field> bestMoves, int seed)
+{
+    srand(seed);
+    int randomNum = rand() % bestMoves.size();
+    map<Piece, Field>::iterator iterator = bestMoves.begin(); // Here we really should just use a Move struct instead of using a Map.
+    advance(iterator, randomNum);                             // Iterate random steps into bestMoves. This would also allow to keep multiple best moves for the same piece, if some are equally good. 
+    Piece randomPiece = iterator->first;
+    Field randomMove = iterator->second;
+    bool isMoveValid = validateMove(randomMove, randomPiece);
+    if (isMoveValid)
+    {
+        executeMove(randomMove, randomPiece);
+    }
+    else
+    {
+        for (int i = 0; i < bestMoves.size(); i++)
+        {
+            Piece p = iterator->first;
+            Field m = iterator->second;
+            if (validateMove(m, p))
+            {
+                executeMove(m, p);
+                break;
+            }
+        }
+    }
+}
+
 void computerMoveRandom(int seed)
 {
     vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
@@ -672,7 +687,29 @@ void computerMoveRandom(int seed)
     vector<Field> movesForRandomPiece = getValidMoves(randomPiece);
     randomNum = rand() % movesForRandomPiece.size();
     Field randomMove = movesForRandomPiece[randomNum];
-    executeMove(randomMove, randomPiece);
+    bool isMoveValid = validateMove(randomMove, randomPiece);
+
+    if (isMoveValid)
+    {
+        executeMove(randomMove, randomPiece);
+    }
+    else
+    { // give up randomness and try all
+        for (int i = 0; i < possiblePieces.size(); i++)
+        {
+            Piece p = possiblePieces[i];
+            vector<Field> movesForP = getValidMoves(p);
+            for (int j = 0; j < movesForP.size(); j++)
+            {
+                Field m = movesForP[j];
+                if (validateMove(m, p))
+                {
+                    executeMove(m, p);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void computerMoveCleverRandom(int seed)
@@ -699,13 +736,7 @@ void computerMoveCleverRandom(int seed)
             }
         }
     }
-    srand(seed);
-    int randomNum = rand() % bestMoves.size();
-    map<Piece, Field>::iterator iterator = bestMoves.begin(); // Here we really should just use a Move struct instead of using a Map.
-    advance(iterator, randomNum);                             // Iterate random steps into bestMoves
-    Piece randomPiece = iterator->first;
-    Field randomMove = iterator->second;
-    executeMove(randomMove, randomPiece);
+    executeRandomMove(bestMoves, seed);
 }
 
 int evaluateBoard(Piece boardState[8][8])
@@ -757,9 +788,9 @@ bool isGameOver(Piece boardState[8][8])
 }
 
 // Finds the best move for either white or black. Each black piece has a negative value and each white piece a positive. Black tries to minimize the sum value of pieces. White tries to maximize.
-int minimMax(int depth, bool maximizingPlayer, Piece boardState[8][8])
+int miniMax(int depth, bool maximizingPlayer, int alpha, int beta, Piece boardState[8][8])
 {
-    if (depth == 0 || isGameOver(boardState)) //
+    if (depth == 0 || isGameOver(boardState)) 
     {
         return evaluateBoard(boardState);
     }
@@ -769,16 +800,28 @@ int minimMax(int depth, bool maximizingPlayer, Piece boardState[8][8])
     for (int i = 0; i < possiblePieces.size(); i++)
     {
         Piece piece = possiblePieces[i];
-        vector<Field> moves = getValidMoves(piece, boardState, maximizingPlayer, true);
+        vector<Field> moves = getValidMoves(piece, boardState, maximizingPlayer);
         for (int j = 0; j < moves.size(); j++)
         {
             Piece newBoardState[8][8];
             memcpy(newBoardState, boardState, sizeof(newBoardState));
             executeMove(moves[j], piece, newBoardState, maximizingPlayer, false);
-            int moveValue = minimMax(depth - 1, !maximizingPlayer, newBoardState);
+            int moveValue = miniMax(depth - 1, !maximizingPlayer, alpha, beta, newBoardState);
             if (maximizingPlayer ? (moveValue > bestMoveValue) : (moveValue < bestMoveValue))
             {
                 bestMoveValue = moveValue;
+            }
+            if (maximizingPlayer && moveValue > alpha)
+            {
+                alpha = moveValue;
+            }
+            if (!maximizingPlayer && moveValue < beta)
+            {
+                beta = moveValue;
+            }
+            if (beta <= alpha)
+            { // Another branch is better
+                break;
             }
         }
     }
@@ -789,6 +832,8 @@ void computerMoveMinMax(int seed, int depth)
 {
     bool maximizingPlayer = turn % 2 == 0 ? true : false; // In the future if wanting to be either white or black.
     int bestMoveValue = maximizingPlayer ? -100 : 100;
+    int alpha = -100; // For white, keeps track of when we can prune
+    int beta = 100;   // For black, keeps track of when we can prune
     map<Piece, Field> bestMoves;
     vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
     for (int i = 0; i < possiblePieces.size(); i++)
@@ -800,7 +845,7 @@ void computerMoveMinMax(int seed, int depth)
             Piece boardCopy[8][8];
             memcpy(boardCopy, board, sizeof(board));
             executeMove(moves[j], piece, boardCopy, turn % 2 == 0, false);
-            int moveValue = minimMax(depth - 1, !maximizingPlayer, boardCopy); // Check if this was the best move by seeing if it results in the best root value.
+            int moveValue = miniMax(depth - 1, !maximizingPlayer, alpha, beta, boardCopy); // Check if this was the best move by seeing if it results in the best root value.
             if (turn % 2 == 0 ? (moveValue > bestMoveValue) : (moveValue < bestMoveValue))
             {
                 bestMoves.clear();
@@ -812,13 +857,7 @@ void computerMoveMinMax(int seed, int depth)
             }
         }
     }
-    srand(seed);
-    int randomNum = rand() % bestMoves.size();
-    map<Piece, Field>::iterator iterator = bestMoves.begin(); // Here we really should just use a Move struct instead of using a Map.
-    advance(iterator, randomNum);                             // Iterate random steps into bestMoves
-    Piece randomPiece = iterator->first;
-    Field randomMove = iterator->second;
-    executeMove(randomMove, randomPiece);
+    executeRandomMove(bestMoves, seed);
 }
 
 void computerMove()
