@@ -10,6 +10,7 @@ uint TILE_SIZE = 80;
 uint PIECE_ADJUST_X = 8;
 uint PIECE_ADJUST_Y = 8;
 bool isDragging = false;
+int lastTurnOfComputerMove = -1; 
 sf::Vector2f dragOffset;
 sf::Vector2f draggedStartPos;
 sf::Sprite *draggedPiece = nullptr;
@@ -88,7 +89,8 @@ int startGui()
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if(getTurn() % 2 != 0) {
+            if(getTurn() % 2 != 0 && lastTurnOfComputerMove < getTurn()) { 
+                lastTurnOfComputerMove = getTurn();
                 computerMove();
                 loader.refreshSpritesFromBoard(getBoard());
             }

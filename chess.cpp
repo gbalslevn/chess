@@ -12,7 +12,7 @@ using namespace std;
 bool gameinprocess = true;
 int turn = 0;
 int gamemode = 1; // Defaults to local game
-int difficulty = 2;
+int difficulty = 3;
 
 struct Field
 {
@@ -76,11 +76,13 @@ Piece board[8][8] = {
     {Piece("Br", Field(0, 7), "", 5), Piece("Bk", Field(1, 7), "", 3), Piece("Bb", Field(2, 7), "", 3), Piece("Bq", Field(3, 7), "", 9), Piece("BK", Field(4, 7), "", 10), Piece("Bb", Field(5, 7), "", 3), Piece("Bk", Field(6, 7), "", 3), Piece("Br", Field(7, 7), "", 5)}  // 7th row (Black pieces)
 };
 
-Piece (&getBoard())[8][8] {
+Piece (&getBoard())[8][8]
+{
     return board;
 }
 
-int getTurn() {
+int getTurn()
+{
     return turn;
 }
 
@@ -217,7 +219,7 @@ bool pieceInTheWay(int direction, int steps)
 }
 
 // Returns valid moves for the piece.
-vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
+vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
     vector<Field> moves;
     int pieceCol = piece.field.col;
@@ -246,10 +248,12 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
         {
             int col = pieceCol + direction[i][0];
             int row = pieceRow + direction[i][1];
-            bool ownPieceBlocks = piece.name[0] == 'W' ? boardState[row][col].name[0] == 'W' : boardState[row][col].name[0] == 'B';
-            if (col >= 0 && col <= 7 && row >= 0 && row <= 7 && !ownPieceBlocks)
+            if (col >= 0 && col <= 7 && row >= 0 && row <= 7)
             {
-                moves.push_back(Field(col, row));
+                bool ownPieceBlocks = piece.name[0] == 'W' ? boardState[row][col].name[0] == 'W' : boardState[row][col].name[0] == 'B';
+                if(!ownPieceBlocks) {
+                    moves.push_back(Field(col, row));
+                }
             }
         }
     }
@@ -267,13 +271,13 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
         {
             // Checks castle for the two directions
             bool pieceObstructingKingSide = pieceInTheWay(1, 3);
-            bool rookHasBeenMovedKingSide = turn % 2 == 0 ? whiteRookOnHHasMoved : blackRookOnHHasMoved;
+            bool rookHasBeenMovedKingSide = isWhitesTurn ? whiteRookOnHHasMoved : blackRookOnHHasMoved;
             if (!pieceObstructingKingSide && !rookHasBeenMovedKingSide)
             {
                 moves.push_back(Field(pieceCol + 2, pieceRow));
             }
             bool pieceObstructingQueenSide = pieceInTheWay(-1, 4);
-            bool rookHasBeenMovedQueenSide = turn % 2 == 0 ? whiteRookOnAHasMoved : blackRookOnAHasMoved;
+            bool rookHasBeenMovedQueenSide = isWhitesTurn ? whiteRookOnAHasMoved : blackRookOnAHasMoved;
             if (!pieceObstructingQueenSide && !rookHasBeenMovedQueenSide)
             {
                 moves.push_back(Field(pieceCol - 2, pieceRow));
@@ -290,7 +294,7 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
     {
         int moveDirection = piece.name[0] == 'W' ? 1 : -1;
         int boostRow = piece.name[0] == 'W' ? 1 : 6;
-        char opponent = turn % 2 == 0 ? 'B' : 'W';
+        char opponent = isWhitesTurn ? 'B' : 'W';
         Piece pieceInFront = boardState[pieceRow + moveDirection][pieceCol];
         Piece pieceInFrontFront = boardState[pieceRow + moveDirection + moveDirection][pieceCol];
         bool aPieceInFront = pieceInFront.name != "00";
@@ -307,11 +311,11 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
             }
 
             // check if able to attack dionaginal
-            if (boardState[pieceRow + moveDirection][pieceCol - 1].name[0] == opponent && pieceCol - 1 >= 0)
+            if (pieceCol - 1 >= 0 && boardState[pieceRow + moveDirection][pieceCol - 1].name[0] == opponent)
             {
                 moves.push_back(Field(pieceCol - 1, pieceRow + moveDirection));
             }
-            if (boardState[pieceRow + moveDirection][pieceCol + 1].name[0] == opponent && pieceCol + 1 <= 7)
+            if (pieceCol + 1 <= 7 && boardState[pieceRow + moveDirection][pieceCol + 1].name[0] == opponent)
             {
                 moves.push_back(Field(pieceCol + 1, pieceRow + moveDirection));
             }
@@ -330,8 +334,9 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8])
 }
 
 // Get valid moves for global board
-vector<Field> getValidMoves(Piece piece) {
-    return getValidMoves(piece, board);
+vector<Field> getValidMoves(Piece piece)
+{
+    return getValidMoves(piece, board, (turn % 2 == 0));
 }
 
 bool validateSelection(Field field)
@@ -363,25 +368,24 @@ bool validateSelection(Field field)
 }
 
 // Check if pawn does an en passant after a double step. Adds it as an en passant target if so
-void checkEnPassant(Piece piece)
+void checkEnPassant(Piece piece, bool isWhiteTurn)
 {
-    string opponent = turn % 2 == 0 ? "B" : "W";
-    int direction = turn % 2 == 0 ? 2 : -2;
+    string opponent = isWhiteTurn ? "B" : "W";
+    int direction = isWhiteTurn ? 2 : -2;
     bool movedNextToAPawn = piece.field.col - 1 >= 0 && board[piece.field.row + direction][piece.field.col - 1].name == opponent + "p" || piece.field.col + 1 <= 7 && board[piece.field.row][piece.field.col + 1].name == opponent + "p";
     if (movedNextToAPawn)
     {
         piece.note = "enPassant" + to_string(turn);
         enPassantPiece = piece;
         enPassantPiece.field = Field(piece.field.col, piece.field.row + direction);
-        cout << "en passant...\n";
     }
 }
 
 // Checks if the opponent is checked by the provided piece
-bool pieceHasCheck(Piece piece, Piece boardState[8][8])
+bool pieceHasCheck(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
 
-    vector<Field> moves = getValidMoves(piece, boardState);
+    vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
     string opponentKing = piece.name[0] == 'W' ? "BK" : "WK";
     for (size_t i = 0; i < moves.size(); ++i)
     {
@@ -393,9 +397,9 @@ bool pieceHasCheck(Piece piece, Piece boardState[8][8])
     return false;
 }
 
-bool currentPlayerIsChecked(Piece boardCopy[8][8])
+bool currentPlayerIsChecked(Piece boardCopy[8][8], bool isWhitesTurn)
 {
-    char currentPlayer = turn % 2 == 0 ? 'W' : 'B';
+    char currentPlayer = isWhitesTurn ? 'W' : 'B';
     for (int row = 0; row < 8; ++row)
     {
         for (int col = 0; col < 8; ++col)
@@ -403,9 +407,9 @@ bool currentPlayerIsChecked(Piece boardCopy[8][8])
             char player = boardCopy[row][col].name[0];
             if (player == currentPlayer)
             {
-                continue;;
+                continue;
             }
-            bool pieceIsChecking = pieceHasCheck(boardCopy[row][col], boardCopy);
+            bool pieceIsChecking = pieceHasCheck(boardCopy[row][col], boardCopy, isWhitesTurn);
             if (pieceIsChecking)
             {
                 return true;
@@ -427,7 +431,7 @@ bool inCheckAfterMove(Field moveToField, Piece piece)
     boardCopy[moveToRow][moveToCol] = piece;
     boardCopy[piece.field.row][piece.field.col] = createEmptyPiece();
     piece.field = moveToField;
-    if (currentPlayerIsChecked(boardCopy))
+    if (currentPlayerIsChecked(boardCopy, (turn % 2 == 0)))
     {
         inCheck = true;
     }
@@ -464,21 +468,21 @@ bool validateMove(Field fieldOfMove, Piece piece)
     return true;
 }
 
-void executeMove(Field moveToField, Piece piece)
+void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool isWhitesTurn, bool incrementTurn)
 {
-    Piece attackedPiece = board[moveToField.row][moveToField.col]; // Maybe rename Piece to Field
+    Piece attackedPiece = boardState[moveToField.row][moveToField.col]; // Maybe rename Piece to Field
 
-    if (attackedPiece.name[1] == 'K')
+    if (attackedPiece.name[1] == 'K' && incrementTurn)
     {
         gameinprocess = false;
-        string winner = turn % 2 == 0 ? "White" : "Black";
+        string winner = isWhitesTurn ? "White" : "Black";
         cout << winner << " won! Congratulations.";
         return;
     }
 
     if (piece.name[1] == 'K')
     {
-        if (turn % 2 == 0)
+        if (isWhitesTurn)
         {
             whiteCanCastle = false;
         }
@@ -492,23 +496,23 @@ void executeMove(Field moveToField, Piece piece)
             // Move the rook
             if (piece.field.col - moveToField.col < 0)
             { // Kingside
-                Piece rook = board[piece.field.row][7];
+                Piece rook = boardState[piece.field.row][7];
                 rook.field = Field(piece.field.col + 1, piece.field.row);
-                board[piece.field.row][piece.field.col + 1] = rook;
-                board[piece.field.row][7] = createEmptyPiece();
+                boardState[piece.field.row][piece.field.col + 1] = rook;
+                boardState[piece.field.row][7] = createEmptyPiece();
             }
             else
             { // Queenside
-                Piece rook = board[piece.field.row][0];
-                rook.field = Field(piece.field.col -1, piece.field.row);
-                board[piece.field.row][piece.field.col - 1] = rook;
-                board[piece.field.row][0] = createEmptyPiece();
+                Piece rook = boardState[piece.field.row][0];
+                rook.field = Field(piece.field.col - 1, piece.field.row);
+                boardState[piece.field.row][piece.field.col - 1] = rook;
+                boardState[piece.field.row][0] = createEmptyPiece();
             }
         }
     }
     if (piece.name[1] == 'r')
     {
-        if (turn % 2 == 0)
+        if (isWhitesTurn)
         {
             (moveToField.col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
         }
@@ -523,21 +527,29 @@ void executeMove(Field moveToField, Piece piece)
         bool twoStepMove = abs(moveToField.row - piece.field.row) - 2 == 0; // maybe combine this into the checkEnPassant method
         if (twoStepMove)
         {
-            checkEnPassant(piece);
+            checkEnPassant(piece, isWhitesTurn);
         }
-        int direction = turn % 2 == 0 ? 1 : -1;  
+        int direction = isWhitesTurn ? 1 : -1;
         if (moveToField == Field(enPassantPiece.field.col, enPassantPiece.field.row + direction))
         {
             // Take the piece behind the en passant move
-            board[enPassantPiece.field.row][enPassantPiece.field.col] = createEmptyPiece();
+            boardState[enPassantPiece.field.row][enPassantPiece.field.col] = createEmptyPiece();
         }
     }
 
     Field currentField = piece.field;
     piece.field = moveToField;
-    board[moveToField.row][moveToField.col] = piece;
-    board[currentField.row][currentField.col] = createEmptyPiece();
-    turn++;
+    boardState[moveToField.row][moveToField.col] = piece;
+    boardState[currentField.row][currentField.col] = createEmptyPiece();
+    if (incrementTurn)
+    {
+        turn++;
+    }
+}
+
+void executeMove(Field moveToField, Piece piece)
+{
+    executeMove(moveToField, piece, board, (turn % 2 == 0), true);
 }
 
 Piece selectPiece()
@@ -585,21 +597,21 @@ bool movePiece(Piece piece)
     return false;
 }
 
-vector<Piece> getOwnPiecesWhichCanMove()
+vector<Piece> getOwnPiecesWhichCanMove(Piece boardState[8][8], bool isWhitesTurn)
 {
-    char currentPlayer = turn % 2 == 0 ? 'W' : 'B';
+    char currentPlayer = isWhitesTurn ? 'W' : 'B';
     vector<Piece> possiblePieces;
     for (int row = 0; row < 8; ++row)
     {
         for (int col = 0; col < 8; ++col)
         {
-            Piece piece = board[row][col];
+            Piece piece = boardState[row][col];
             char player = piece.name[0];
             if (player != currentPlayer)
             {
                 continue;
             }
-            vector<Field> moves = getValidMoves(piece);
+            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
             if (moves.size() > 0)
             {
                 possiblePieces.push_back(piece);
@@ -609,10 +621,15 @@ vector<Piece> getOwnPiecesWhichCanMove()
     return possiblePieces;
 }
 
-void computerMoveRandom()
+vector<Piece> getOwnPiecesWhichCanMove()
+{
+    return getOwnPiecesWhichCanMove(board, (turn % 2 == 0));
+}
+
+void computerMoveRandom(int seed)
 {
     vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
-    srand(time(0)); // seed for randomness
+    srand(seed);
     int randomNum = rand() % possiblePieces.size();
     Piece randomPiece = possiblePieces[randomNum];
     vector<Field> movesForRandomPiece = getValidMoves(randomPiece);
@@ -626,11 +643,11 @@ void computerMoveRandom()
     }
     else
     {
-        computerMoveRandom();
+        computerMoveRandom(seed + 1);
     }
 }
 
-void computerMoveCleverRandom()
+void computerMoveCleverRandom(int seed)
 {
     vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
     map<Piece, Field> bestMoves;
@@ -654,21 +671,143 @@ void computerMoveCleverRandom()
             }
         }
     }
-    srand(time(0)); // seed for randomness
+    srand(seed);
     int randomNum = rand() % bestMoves.size();
     map<Piece, Field>::iterator iterator = bestMoves.begin(); // Here we really should just use a Move struct instead of using a Map.
     advance(iterator, randomNum);                             // Iterate random steps into bestMoves
     Piece randomPiece = iterator->first;
     Field randomMove = iterator->second;
     bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
-    if (!moveSetsItselfInCheck)
+    if (!moveSetsItselfInCheck) // include the check for being in check in getValidMoves instead. The we can simplify the AI methods and also remove recursive calling with new randomness.
     {
         executeMove(randomMove, randomPiece);
         cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
     }
     else
     {
-        computerMoveCleverRandom();
+        computerMoveCleverRandom(seed + 1);
+    }
+}
+
+int evaluateBoard(Piece boardState[8][8])
+{
+    int value = 0;
+    for (int row = 0; row < 8; row++)
+    {
+        for (int col = 0; col < 8; col++)
+        {
+            int pieceValue;
+            Piece evaluatedPiece = boardState[row][col];
+            if (evaluatedPiece.name == "")
+            {
+                continue;
+            }
+            if (evaluatedPiece.name[0] == 'W')
+            {
+                pieceValue = evaluatedPiece.value;
+            }
+            else
+            {
+                pieceValue = evaluatedPiece.value * -1;
+            }
+            value += pieceValue;
+        }
+    }
+    return value;
+}
+
+bool isGameOver(Piece boardState[8][8])
+{
+    int kings = 0;
+    for (int row = 0; row < 8; row++)
+    {
+        for (int col = 0; col < 8; col++)
+        {
+            Piece piece = boardState[row][col];
+            if (piece.name[1] == 'K')
+            {
+                kings++;
+            }
+        }
+    }
+    if (kings != 2)
+    {
+        return true;
+    }
+    return false;
+}
+
+// Finds the best move for either white or black. Each black piece has a negative value and each white piece a positive. Black tries to minimize the sum value of pieces. White tries to maximize.
+int minimMax(int depth, bool maximizingPlayer, Piece boardState[8][8])
+{
+    if (depth == 0 || isGameOver(boardState)) // 
+    {
+        return evaluateBoard(boardState);
+    }
+
+    int bestMoveValue = maximizingPlayer ? -100 : 100;
+    vector<Piece> possiblePieces = getOwnPiecesWhichCanMove(boardState, maximizingPlayer);
+    for (int i = 0; i < possiblePieces.size(); i++)
+    {
+        Piece piece = possiblePieces[i];
+        vector<Field> moves = getValidMoves(piece, boardState, maximizingPlayer);
+        for (int j = 0; j < moves.size(); j++)
+        {
+            Piece newBoardState[8][8];
+            memcpy(newBoardState, boardState, sizeof(newBoardState));
+            executeMove(moves[j], piece, newBoardState, maximizingPlayer, false);
+            int moveValue = minimMax(depth - 1, !maximizingPlayer, newBoardState);
+            if (maximizingPlayer ? (moveValue > bestMoveValue) : (moveValue < bestMoveValue))
+            {
+                bestMoveValue = moveValue;
+            }
+        }
+    }
+    return bestMoveValue;
+}
+
+void computerMoveMinMax(int seed, int depth)
+{
+    bool maximizingPlayer = turn % 2 == 0 ? true : false; // In the future if wanting to be either white or black.
+    int bestMoveValue = maximizingPlayer ? -100 : 100;
+    map<Piece, Field> bestMoves;
+    vector<Piece> possiblePieces = getOwnPiecesWhichCanMove();
+    for (int i = 0; i < possiblePieces.size(); i++)
+    {
+        Piece piece = possiblePieces[i];
+        vector<Field> moves = getValidMoves(piece);
+        for (int j = 0; j < moves.size(); j++)
+        {
+            Piece boardCopy[8][8];
+            memcpy(boardCopy, board, sizeof(board));
+            executeMove(moves[j], piece, boardCopy, turn % 2 == 0, false);
+            int moveValue = minimMax(depth - 1, !maximizingPlayer, boardCopy); // Check if this was the best move by seeing if it results in the best root value.
+            if (turn % 2 == 0 ? (moveValue > bestMoveValue) : (moveValue < bestMoveValue))
+            {
+                bestMoves.clear();
+                bestMoveValue = moveValue;
+            }
+            if (moveValue == bestMoveValue)
+            {
+                bestMoves[piece] = moves[j];
+            }
+        }
+    }
+    srand(seed);
+    int randomNum = rand() % bestMoves.size();
+    map<Piece, Field>::iterator iterator = bestMoves.begin(); // Here we really should just use a Move struct instead of using a Map.
+    advance(iterator, randomNum);                             // Iterate random steps into bestMoves
+    Piece randomPiece = iterator->first;
+    Field randomMove = iterator->second;
+    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
+    if (!moveSetsItselfInCheck) // include the check for being in check in getValidMoves instead. The we can simplify the AI methods and also remove recursive calling with new randomness.
+    {
+        executeMove(randomMove, randomPiece);
+        cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
+    }
+    else
+    {
+        computerMoveMinMax(seed + 1, depth);
     }
 }
 
@@ -677,12 +816,15 @@ void computerMove()
     switch (difficulty)
     {
     case 1:
-        computerMoveRandom();
+        computerMoveRandom(time(0));
         break;
     case 2:
-        computerMoveCleverRandom();
+        computerMoveCleverRandom(time(0));
         break;
     case 3:
+        computerMoveMinMax(time(0), 3);
+        break;
+    case 4:
         cout << "Selected computermode is not implemented, lol";
         break;
     }
