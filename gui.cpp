@@ -10,12 +10,13 @@ uint TILE_SIZE = 80;
 uint PIECE_ADJUST_X = 8;
 uint PIECE_ADJUST_Y = 8;
 bool isDragging = false;
-int lastTurnOfComputerMove = -1; 
+int lastTurn = -1;
+bool isGameOver = false;
 sf::Vector2f dragOffset;
 sf::Vector2f draggedStartPos;
 sf::Sprite *draggedPiece = nullptr;
 vector<sf::Sprite> pieces;
-
+sf::Text announcementText;
 sf::Font font;
 
 // Converts a position on the board to the col on the board
@@ -33,7 +34,6 @@ int getRow(int posY)
 void drawBoard(sf::RenderWindow &window)
 {
     int boardSize = 10;
-    // Create label text
     sf::Text label;
     label.setFont(font);
     label.setCharacterSize(18);
@@ -69,6 +69,21 @@ void drawBoard(sf::RenderWindow &window)
             }
         }
     }
+    string playerInTurn = getTurn() % 2 == 0 ? "White" : "Black";
+    string opponent = getTurn() % 2 != 0 ? "White" : "Black";
+    announcementText.setFont(font);
+    announcementText.setCharacterSize(18);
+    announcementText.setFillColor(sf::Color::White);
+    if (isGameOver)
+    {
+        announcementText.setString(opponent + " won.");
+    }
+    else
+    {
+        announcementText.setString(playerInTurn + " to move");
+    }
+    announcementText.setPosition(32, 32);
+    window.draw(announcementText);
 }
 
 int startGui()
@@ -89,12 +104,6 @@ int startGui()
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if(getTurn() % 2 != 0 && lastTurnOfComputerMove < getTurn()) { 
-                lastTurnOfComputerMove = getTurn();
-                computerMove();
-                loader.refreshSpritesFromBoard(getBoard());
-            }
-
             if (event.type == sf::Event::Closed)
             {
                 window.close();
@@ -167,6 +176,20 @@ int startGui()
         for (int i = 0; i < pieces.size(); i++)
         {
             window.draw(pieces[i]);
+        }
+        int turn = getTurn();
+        if (lastTurn < turn)
+        {
+            lastTurn = turn;
+            if (!isGameInProcess())
+            {
+                isGameOver = true;
+            }
+            if (turn % 2 != 0)
+            {
+                computerMove();
+                loader.refreshSpritesFromBoard(getBoard());
+            }
         }
         window.display();
     }

@@ -86,6 +86,11 @@ int getTurn()
     return turn;
 }
 
+bool isGameInProcess()
+{
+    return gameinprocess;
+}
+
 // Representing an empty field
 Piece createEmptyPiece()
 {
@@ -218,8 +223,10 @@ bool pieceInTheWay(int direction, int steps)
     return pieceInTheWay;
 }
 
+bool inCheckAfterMove(Field moveToField, Piece piece);
+
 // Returns valid moves for the piece.
-vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
+vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTurn, bool checkForCheck)
 {
     vector<Field> moves;
     int pieceCol = piece.field.col;
@@ -251,7 +258,8 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTu
             if (col >= 0 && col <= 7 && row >= 0 && row <= 7)
             {
                 bool ownPieceBlocks = piece.name[0] == 'W' ? boardState[row][col].name[0] == 'W' : boardState[row][col].name[0] == 'B';
-                if(!ownPieceBlocks) {
+                if (!ownPieceBlocks)
+                {
                     moves.push_back(Field(col, row));
                 }
             }
@@ -330,13 +338,23 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTu
         // Could remove moves which puts oneself in check here. Responsibility is given to validatemove for now. Good thing about that is we only check for a single move instead of running all moves through inCheckAfterMove
     }
 
+    if (checkForCheck)
+    {
+        for (int i = moves.size() - 1; i >= 0; i--)
+        {
+            if (inCheckAfterMove(moves[i], piece))
+            {
+                moves.erase(moves.begin() + i);
+            }
+        }
+    }
     return moves;
 }
 
 // Get valid moves for global board
 vector<Field> getValidMoves(Piece piece)
 {
-    return getValidMoves(piece, board, (turn % 2 == 0));
+    return getValidMoves(piece, board, (turn % 2 == 0), true);
 }
 
 bool validateSelection(Field field)
@@ -381,11 +399,28 @@ void checkEnPassant(Piece piece, bool isWhiteTurn)
     }
 }
 
+Piece getKing(bool white)
+{
+    string kingName = white ? "WK" : "BK";
+    for (int row = 0; row < 8; row++)
+    {
+        for (int col = 0; col < 8; col++)
+        {
+            Piece piece = board[row][col];
+            if (piece.name == kingName)
+            {
+                return piece;
+            }
+        }
+    }
+    return createEmptyPiece();
+}
+
 // Checks if the opponent is checked by the provided piece
 bool pieceHasCheck(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
 
-    vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
+    vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn, false);
     string opponentKing = piece.name[0] == 'W' ? "BK" : "WK";
     for (size_t i = 0; i < moves.size(); ++i)
     {
@@ -404,12 +439,17 @@ bool currentPlayerIsChecked(Piece boardCopy[8][8], bool isWhitesTurn)
     {
         for (int col = 0; col < 8; ++col)
         {
-            char player = boardCopy[row][col].name[0];
+            Piece piece = boardCopy[row][col];
+            char player = piece.name[0];
             if (player == currentPlayer)
             {
                 continue;
             }
-            bool pieceIsChecking = pieceHasCheck(boardCopy[row][col], boardCopy, isWhitesTurn);
+            if (piece.name == "00")
+            {
+                continue;
+            }
+            bool pieceIsChecking = pieceHasCheck(piece, boardCopy, isWhitesTurn);
             if (pieceIsChecking)
             {
                 return true;
@@ -471,14 +511,6 @@ bool validateMove(Field fieldOfMove, Piece piece)
 void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool isWhitesTurn, bool incrementTurn)
 {
     Piece attackedPiece = boardState[moveToField.row][moveToField.col]; // Maybe rename Piece to Field
-
-    if (attackedPiece.name[1] == 'K' && incrementTurn)
-    {
-        gameinprocess = false;
-        string winner = isWhitesTurn ? "White" : "Black";
-        cout << winner << " won! Congratulations.";
-        return;
-    }
 
     if (piece.name[1] == 'K')
     {
@@ -544,6 +576,11 @@ void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool is
     if (incrementTurn)
     {
         turn++;
+        vector<Field> moves = getValidMoves(getKing((turn % 2 == 0)));
+        if (moves.size() == 0 && currentPlayerIsChecked(board, turn % 2 == 0))
+        {
+            gameinprocess = false;
+        }
     }
 }
 
@@ -607,11 +644,11 @@ vector<Piece> getOwnPiecesWhichCanMove(Piece boardState[8][8], bool isWhitesTurn
         {
             Piece piece = boardState[row][col];
             char player = piece.name[0];
-            if (player != currentPlayer)
+            if (player != currentPlayer || piece.name == "00")
             {
                 continue;
             }
-            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
+            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn, true);
             if (moves.size() > 0)
             {
                 possiblePieces.push_back(piece);
@@ -635,16 +672,7 @@ void computerMoveRandom(int seed)
     vector<Field> movesForRandomPiece = getValidMoves(randomPiece);
     randomNum = rand() % movesForRandomPiece.size();
     Field randomMove = movesForRandomPiece[randomNum];
-    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
-    if (!moveSetsItselfInCheck)
-    {
-        executeMove(randomMove, randomPiece);
-        cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
-    }
-    else
-    {
-        computerMoveRandom(seed + 1);
-    }
+    executeMove(randomMove, randomPiece);
 }
 
 void computerMoveCleverRandom(int seed)
@@ -677,16 +705,7 @@ void computerMoveCleverRandom(int seed)
     advance(iterator, randomNum);                             // Iterate random steps into bestMoves
     Piece randomPiece = iterator->first;
     Field randomMove = iterator->second;
-    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
-    if (!moveSetsItselfInCheck) // include the check for being in check in getValidMoves instead. The we can simplify the AI methods and also remove recursive calling with new randomness.
-    {
-        executeMove(randomMove, randomPiece);
-        cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
-    }
-    else
-    {
-        computerMoveCleverRandom(seed + 1);
-    }
+    executeMove(randomMove, randomPiece);
 }
 
 int evaluateBoard(Piece boardState[8][8])
@@ -740,7 +759,7 @@ bool isGameOver(Piece boardState[8][8])
 // Finds the best move for either white or black. Each black piece has a negative value and each white piece a positive. Black tries to minimize the sum value of pieces. White tries to maximize.
 int minimMax(int depth, bool maximizingPlayer, Piece boardState[8][8])
 {
-    if (depth == 0 || isGameOver(boardState)) // 
+    if (depth == 0 || isGameOver(boardState)) //
     {
         return evaluateBoard(boardState);
     }
@@ -750,7 +769,7 @@ int minimMax(int depth, bool maximizingPlayer, Piece boardState[8][8])
     for (int i = 0; i < possiblePieces.size(); i++)
     {
         Piece piece = possiblePieces[i];
-        vector<Field> moves = getValidMoves(piece, boardState, maximizingPlayer);
+        vector<Field> moves = getValidMoves(piece, boardState, maximizingPlayer, true);
         for (int j = 0; j < moves.size(); j++)
         {
             Piece newBoardState[8][8];
@@ -799,16 +818,7 @@ void computerMoveMinMax(int seed, int depth)
     advance(iterator, randomNum);                             // Iterate random steps into bestMoves
     Piece randomPiece = iterator->first;
     Field randomMove = iterator->second;
-    bool moveSetsItselfInCheck = inCheckAfterMove(randomMove, randomPiece);
-    if (!moveSetsItselfInCheck) // include the check for being in check in getValidMoves instead. The we can simplify the AI methods and also remove recursive calling with new randomness.
-    {
-        executeMove(randomMove, randomPiece);
-        cout << "\nBlack moved " << randomPiece.name << " from " << Field(randomPiece.field.col, randomPiece.field.row) << " to " << randomMove << "\n";
-    }
-    else
-    {
-        computerMoveMinMax(seed + 1, depth);
-    }
+    executeMove(randomMove, randomPiece);
 }
 
 void computerMove()
@@ -833,7 +843,6 @@ void computerMove()
 void handleTurn()
 {
     string move;
-    // testMethod();
     if (turn % 2 == 0)
     {
         cout << "\nWhite's turn\n";

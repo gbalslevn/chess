@@ -27,5 +27,6 @@ void executeMove(Field moveToField, Piece piece);
 void printBoard();
 int getTurn();
 void computerMove();
+bool isGameInProcess();
 
 #endif
