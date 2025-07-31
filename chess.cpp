@@ -99,7 +99,7 @@ Piece createEmptyPiece()
 
 Piece enPassantPiece; // Store the latest piece which has been done an en passant
 bool whiteCanCastle = true;
-bool whiteRookOnHHasMoved = false; // This should be as note on the piece in the future if board contains Piece objects instead of strings
+bool whiteRookOnHHasMoved = false;
 bool whiteRookOnAHasMoved = false;
 bool blackCanCastle = true;
 bool blackRookOnHHasMoved = false;
@@ -223,8 +223,6 @@ bool pieceInTheWay(int direction, int steps)
     return pieceInTheWay;
 }
 
-bool inCheckAfterMove(Field moveToField, Piece piece);
-
 // Returns valid moves for the piece.
 vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
@@ -236,7 +234,6 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTu
     if (pieceType == 'r') // rook
     {
         moves = calculateMoves(moves, piece, false, false, true, boardState);
-        // Check for castling
     }
     if (pieceType == 'k') // knight
     {
@@ -272,9 +269,8 @@ vector<Field> getValidMoves(Piece piece, Piece boardState[8][8], bool isWhitesTu
     if (pieceType == 'K') // king
     {
         moves = calculateMoves(moves, piece, true, true, true, boardState);
-        // Check for castling
+        
         bool canCastle = piece.name[0] == 'W' ? whiteCanCastle : blackCanCastle;
-
         if (canCastle)
         {
             // Checks castle for the two directions
@@ -386,23 +382,6 @@ void checkEnPassant(Piece piece, bool isWhiteTurn)
     }
 }
 
-Piece getKing(bool white)
-{
-    string kingName = white ? "WK" : "BK";
-    for (int row = 0; row < 8; row++)
-    {
-        for (int col = 0; col < 8; col++)
-        {
-            Piece piece = board[row][col];
-            if (piece.name == kingName)
-            {
-                return piece;
-            }
-        }
-    }
-    return createEmptyPiece();
-}
-
 // Checks if the opponent is checked by the provided piece
 bool pieceHasCheck(Piece piece, Piece boardState[8][8], bool isWhitesTurn)
 {
@@ -465,6 +444,35 @@ bool inCheckAfterMove(Field moveToField, Piece piece)
     return inCheck;
 }
 
+vector<Piece> getOwnPiecesWhichCanMove(Piece boardState[8][8], bool isWhitesTurn)
+{
+    char currentPlayer = isWhitesTurn ? 'W' : 'B';
+    vector<Piece> possiblePieces;
+    for (int row = 0; row < 8; ++row)
+    {
+        for (int col = 0; col < 8; ++col)
+        {
+            Piece piece = boardState[row][col];
+            char player = piece.name[0];
+            if (player != currentPlayer || piece.name == "00")
+            {
+                continue;
+            }
+            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
+            if (moves.size() > 0)
+            {
+                possiblePieces.push_back(piece);
+            }
+        }
+    }
+    return possiblePieces;
+}
+
+vector<Piece> getOwnPiecesWhichCanMove()
+{
+    return getOwnPiecesWhichCanMove(board, (turn % 2 == 0));
+}
+
 // Checks the move to the provided field using the provided piece is valid
 bool validateMove(Field fieldOfMove, Piece piece)
 {
@@ -501,13 +509,8 @@ void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool is
 
     if (piece.name[1] == 'K')
     {
-        if (isWhitesTurn)
-        {
-            whiteCanCastle = false;
-        }
-        else
-        {
-            blackCanCastle = false;
+        if(incrementTurn) {
+            (isWhitesTurn ? whiteCanCastle : blackCanCastle) = false;
         }
         bool moveWasCastle = abs(piece.field.col - moveToField.col) == 2;
         if (moveWasCastle)
@@ -531,13 +534,15 @@ void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool is
     }
     if (piece.name[1] == 'r')
     {
-        if (isWhitesTurn)
-        {
-            (moveToField.col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
-        }
-        else
-        {
-            (moveToField.col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
+        if(incrementTurn) {
+            if (isWhitesTurn)
+            {
+                (moveToField.col == 7 ? whiteRookOnHHasMoved : whiteRookOnAHasMoved) = true;
+            }
+            else
+            {
+                (moveToField.col == 7 ? blackRookOnHHasMoved : blackRookOnAHasMoved) = true;
+            }
         }
     }
 
@@ -563,10 +568,12 @@ void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool is
     if (incrementTurn)
     {
         turn++;
-        vector<Field> moves = getValidMoves(getKing((turn % 2 == 0)));
-        if (moves.size() == 0 && currentPlayerIsChecked(board, turn % 2 == 0)) // THIS IMPL DOES NOT WORK. CHECKED POSITIONS IS PART OF getValidMOves. ALSO, ANOTHER PIECE MIGHT ENSURE THERE IS NO CHECKMATE.  NEED TO CHECK ANOTHER WAY
+        if (currentPlayerIsChecked(board, turn % 2 == 0)) // THIS IMPL DOES NOT WORK. CHECKED POSITIONS IS PART OF getValidMOves. ALSO, ANOTHER PIECE MIGHT ENSURE THERE IS NO CHECKMATE.  NEED TO CHECK ANOTHER WAY
         {
-            gameinprocess = false;
+            vector<Piece> piecesWhichCanMove = getOwnPiecesWhichCanMove();
+            if(piecesWhichCanMove.size()) {
+                gameinprocess = false;
+            }
         }
     }
 }
@@ -619,35 +626,6 @@ bool movePiece(Piece piece)
     cout << "Please retype move: \n";
     movePiece(piece);
     return false;
-}
-
-vector<Piece> getOwnPiecesWhichCanMove(Piece boardState[8][8], bool isWhitesTurn)
-{
-    char currentPlayer = isWhitesTurn ? 'W' : 'B';
-    vector<Piece> possiblePieces;
-    for (int row = 0; row < 8; ++row)
-    {
-        for (int col = 0; col < 8; ++col)
-        {
-            Piece piece = boardState[row][col];
-            char player = piece.name[0];
-            if (player != currentPlayer || piece.name == "00")
-            {
-                continue;
-            }
-            vector<Field> moves = getValidMoves(piece, boardState, isWhitesTurn);
-            if (moves.size() > 0)
-            {
-                possiblePieces.push_back(piece);
-            }
-        }
-    }
-    return possiblePieces;
-}
-
-vector<Piece> getOwnPiecesWhichCanMove()
-{
-    return getOwnPiecesWhichCanMove(board, (turn % 2 == 0));
 }
 
 void executeRandomMove(map<Piece, Field> bestMoves, int seed)
