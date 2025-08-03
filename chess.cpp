@@ -373,7 +373,7 @@ void checkEnPassant(Piece piece, bool isWhiteTurn)
 {
     string opponent = isWhiteTurn ? "B" : "W";
     int direction = isWhiteTurn ? 2 : -2;
-    bool movedNextToAPawn = piece.field.col - 1 >= 0 && board[piece.field.row + direction][piece.field.col - 1].name == opponent + "p" || piece.field.col + 1 <= 7 && board[piece.field.row][piece.field.col + 1].name == opponent + "p";
+    bool movedNextToAPawn = piece.field.col - 1 >= 0 && board[piece.field.row + direction][piece.field.col - 1].name == opponent + "p" || piece.field.col + 1 <= 7 && board[piece.field.row + direction][piece.field.col + 1].name == opponent + "p";
     if (movedNextToAPawn)
     {
         piece.note = "enPassant" + to_string(turn);
@@ -568,10 +568,25 @@ void executeMove(Field moveToField, Piece piece, Piece boardState[8][8], bool is
     if (incrementTurn)
     {
         turn++;
-        if (currentPlayerIsChecked(board, turn % 2 == 0)) // THIS IMPL DOES NOT WORK. CHECKED POSITIONS IS PART OF getValidMOves. ALSO, ANOTHER PIECE MIGHT ENSURE THERE IS NO CHECKMATE.  NEED TO CHECK ANOTHER WAY
+        if (currentPlayerIsChecked(board, turn % 2 == 0))
         {
             vector<Piece> piecesWhichCanMove = getOwnPiecesWhichCanMove();
-            if(piecesWhichCanMove.size()) {
+            bool hasValidMove = false;
+            for (int i = 0; i < piecesWhichCanMove.size(); i++)
+            {
+                vector<Field> moves = getValidMoves(piecesWhichCanMove[i]);
+                for (size_t j = 0; j < moves.size(); j++)
+                {
+                    bool isInCheck = inCheckAfterMove(moves[j], piecesWhichCanMove[i]);
+                    if(!isInCheck) {
+                        hasValidMove = true;
+                        break;
+                    }
+                }
+                if(hasValidMove) break;
+            }
+            
+            if(!hasValidMove) { // Checkmate
                 gameinprocess = false;
             }
         }
